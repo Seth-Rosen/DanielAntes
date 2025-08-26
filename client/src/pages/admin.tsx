@@ -40,6 +40,12 @@ export default function Admin() {
     enabled: isLoggedIn,
   });
 
+  const { data: pages = [] } = useQuery({
+    queryKey: ["/api/pages"],
+    queryFn: () => api.getPages(),
+    enabled: isLoggedIn,
+  });
+
   const loginMutation = useMutation({
     mutationFn: ({ username, password }: { username: string; password: string }) => 
       auth.login(username, password),
@@ -207,7 +213,7 @@ export default function Admin() {
                 data-testid="button-page-builder"
               >
                 <i className="fas fa-edit mr-2"></i>
-                Page Builder
+                New Page
               </Button>
               <Button 
                 onClick={handleLogout} 
@@ -388,6 +394,55 @@ export default function Admin() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Pages Management */}
+          <Card className="mt-8" data-testid="pages-management-card">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <i className="fas fa-file-alt mr-2 text-primary"></i>
+                Pages Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="existing-pages">
+                {pages.map((page: any) => (
+                  <Card 
+                    key={page.id} 
+                    className="cursor-pointer hover:shadow-md transition-shadow border-border"
+                    onClick={() => setLocation(`/builder/${page.id}`)}
+                    data-testid={`page-card-${page.id}`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold truncate" data-testid={`page-title-${page.id}`}>
+                          {page.title}
+                        </h4>
+                        <div className={`w-2 h-2 rounded-full ${page.published ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2" data-testid={`page-slug-${page.id}`}>
+                        /{page.slug}
+                      </p>
+                      <div className="text-xs text-muted-foreground">
+                        {page.published ? 'Published' : 'Draft'}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                <Card 
+                  className="cursor-pointer hover:shadow-md transition-shadow border-dashed border-2 border-muted-foreground/30"
+                  onClick={() => setLocation("/builder")}
+                  data-testid="new-page-card"
+                >
+                  <CardContent className="p-4 flex items-center justify-center h-full">
+                    <div className="text-center text-muted-foreground">
+                      <i className="fas fa-plus text-2xl mb-2"></i>
+                      <div className="font-semibold">Create New Page</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Image Gallery */}
           <Card className="mt-8" data-testid="image-gallery-card">

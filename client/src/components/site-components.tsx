@@ -218,7 +218,7 @@ export const PortfolioSection = ({ title, subtitle, showFilters, availableTags }
   title: string;
   subtitle: string;
   showFilters: boolean;
-  availableTags: Array<{ tag: string }>;
+  availableTags: Array<{ value: string }>;
 }) => {
   const [selectedTag, setSelectedTag] = useState<string>("all");
 
@@ -254,7 +254,7 @@ export const PortfolioSection = ({ title, subtitle, showFilters, availableTags }
     setSelectedTag(tag);
   };
 
-  const tags = availableTags.map(item => item.tag);
+  const tags = availableTags.map(item => item.value);
 
   if (projectsLoading || imagesLoading) {
     return (
@@ -406,7 +406,7 @@ export const PortfolioSection = ({ title, subtitle, showFilters, availableTags }
 // StorySection Component
 export const StorySection = ({ title, paragraphs, experienceYears, ctaText }: {
   title: string;
-  paragraphs: Array<{ text: string }>;
+  paragraphs: Array<{ value: string }>;
   experienceYears: string;
   ctaText: string;
 }) => {
@@ -428,7 +428,7 @@ export const StorySection = ({ title, paragraphs, experienceYears, ctaText }: {
             <div className="space-y-6 text-lg text-muted-foreground">
               {paragraphs.map((paragraph, index) => (
                 <p key={index} data-testid={`story-paragraph-${index + 1}`}>
-                  {paragraph.text}
+                  {paragraph.value}
                 </p>
               ))}
             </div>

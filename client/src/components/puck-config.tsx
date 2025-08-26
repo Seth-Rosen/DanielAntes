@@ -27,11 +27,11 @@ export type UserConfig = {
     title: string;
     subtitle: string;
     showFilters: boolean;
-    availableTags: string[];
+    availableTags: Array<{ value: string }>;
   };
   StorySection: {
     title: string;
-    paragraphs: string[];
+    paragraphs: Array<{ value: string }>;
     experienceYears: string;
     ctaText: string;
   };
@@ -130,7 +130,11 @@ export const config: Config<UserConfig> = {
         availableTags: {
           type: "array",
           arrayFields: {
-            tag: { type: "text" },
+            value: { type: "text" },
+          },
+          getItemSummary: (item: { value: string }) => item.value,
+          defaultItemProps: {
+            value: "parquet",
           },
         },
       },
@@ -139,9 +143,9 @@ export const config: Config<UserConfig> = {
         subtitle: "Explore our complete collection of bespoke marquetry and hardwood flooring projects",
         showFilters: true,
         availableTags: [
-          { tag: "parquet" },
-          { tag: "medallion" }, 
-          { tag: "mandala" },
+          { value: "parquet" },
+          { value: "medallion" }, 
+          { value: "mandala" },
         ],
       },
       render: PortfolioSection,
@@ -152,7 +156,11 @@ export const config: Config<UserConfig> = {
         paragraphs: {
           type: "array",
           arrayFields: {
-            text: { type: "textarea" },
+            value: { type: "textarea" },
+          },
+          getItemSummary: (item: { value: string }) => item.value.substring(0, 50) + "...",
+          defaultItemProps: {
+            value: "Your story paragraph here...",
           },
         },
         experienceYears: { type: "text" },
@@ -162,13 +170,13 @@ export const config: Config<UserConfig> = {
         title: "My Story",
         paragraphs: [
           {
-            text: "For over three decades, I've dedicated my life to the ancient art of marquetry and the precise craft of hardwood flooring. What began as an apprenticeship under master craftsmen in traditional European workshops has evolved into a passion for creating floors that are both functional and artistic.",
+            value: "For over three decades, I've dedicated my life to the ancient art of marquetry and the precise craft of hardwood flooring. What began as an apprenticeship under master craftsmen in traditional European workshops has evolved into a passion for creating floors that are both functional and artistic.",
           },
           {
-            text: "Each project represents a unique collaboration between client vision and artisan expertise. I believe that a floor should tell a story—whether through the sacred geometry of a mandala, the classical elegance of parquet, or the focal drama of a hand-crafted medallion.",
+            value: "Each project represents a unique collaboration between client vision and artisan expertise. I believe that a floor should tell a story—whether through the sacred geometry of a mandala, the classical elegance of parquet, or the focal drama of a hand-crafted medallion.",
           },
           {
-            text: "My commitment extends beyond individual projects to preserving these time-honored techniques for future generations, mentoring young craftspeople and contributing to industry resources that advance the field.",
+            value: "My commitment extends beyond individual projects to preserving these time-honored techniques for future generations, mentoring young craftspeople and contributing to industry resources that advance the field.",
           },
         ],
         experienceYears: "30+",
