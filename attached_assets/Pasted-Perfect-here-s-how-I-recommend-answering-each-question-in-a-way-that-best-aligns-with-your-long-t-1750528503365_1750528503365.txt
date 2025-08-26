@@ -1,0 +1,115 @@
+Perfect — here's how I recommend answering each question, in a way that best aligns with your long-term goals (flexibility, artist-friendly editing, cost-effectiveness, and clean extensibility).
+
+✅ 1. Admin Interface Priorities
+Answer:
+The admin should be able to:
+
+✅ Create new projects from scratch
+
+✅ Upload images and assign them to a project
+
+✅ Assign tags to each image during upload
+
+✅ Optionally: Reassign images to different projects later
+
+Goal: Make it easy to manage new work over time. Projects are the main unit of organization, so the admin workflow should start with:
+
+Create a project
+
+Upload images to it
+
+Tag images accordingly
+
+This keeps everything tidy and narrative-friendly.
+
+✅ 2. Homepage Carousel Logic
+Answer:
+Each homepage carousel (e.g., Parquet, Mandala, etc.) should:
+
+✅ Show only images tagged with that type
+
+✅ But only if they are also marked as “carouselFeature”: true
+
+✅ Pull from any project, not just one
+
+This gives the artist full visual control: only images explicitly marked for carousel display will appear.
+
+✅ 3. Project Display on Portfolio Page
+Answer:
+Projects on the portfolio page should:
+
+✅ Display chronologically, newest first (default)
+
+✅ Later support manual ordering via a sortIndex field in the project metadata
+
+❌ Do not group by tag — tags are for filtering, not structure
+
+This ensures consistency and discoverability while keeping the door open for future manual curation.
+
+✅ 4. Tag Management Strategy
+Answer:
+Start with:
+
+✅ The 3 initial "work type" tags: parquet, medallion, mandala
+
+✅ Allow the admin to add custom tags over time
+
+✅ Add a "tag type" field to distinguish:
+
+workType (used for homepage carousels + portfolio filtering)
+
+descriptive (used for internal organization or future features)
+
+This gives structure without boxing the system in, and allows growth into more descriptive tagging later (like materials, techniques, location, etc.)
+
+✍️ TL;DR Summary for Replit
+Here’s how you’d pass all of this as a unified instruction:
+
+txt
+Copy
+Edit
+Please implement the admin and content model based on the following structure and preferences:
+
+ADMIN INTERFACE:
+- Allow the admin to:
+  - Create new projects
+  - Upload images and assign them to a project
+  - Tag images with one or more tags
+  - Optionally reassign an image to a different project
+- Tags should be typed:
+  - "workType" (used for homepage carousels and portfolio filters)
+  - "descriptive" (optional for future enhancements)
+- Start with 3 default workType tags: "parquet", "medallion", "mandala"
+- Admin can create new tags as needed
+
+HOMEPAGE CAROUSELS:
+- Each homepage section (Parquet, Mandala, etc.) is a horizontal carousel
+- Show images that:
+  - Are tagged with that workType
+  - Are also marked `carouselFeature: true`
+  - Can come from any project
+
+PORTFOLIO PAGE:
+- Group images by their associated project
+- Show projects in reverse chronological order (newest first)
+- Each project section includes a title, optional description, and filtered images
+- Add filter buttons to the top that:
+  - Filter by workType tags
+  - Show only the images with that tag, grouped under their project
+
+TECH STACK:
+- Continue using React + Tailwind + Vite frontend
+- Use Node.js + Express + flat file (JSON) backend
+- Store image metadata and project definitions in JSON files
+- Image files stored in `/uploads/images/`
+
+Let me know if you'd like a full /data/ folder scaffold, schema definition, or mock upload form logic. You're designing something very solid — and this plan makes it both scalable and easy for a non-technical user to maintain.
+
+
+
+
+
+
+
+
+
