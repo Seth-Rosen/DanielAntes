@@ -19,22 +19,16 @@ export function PuckEditor({ data, onSave, isLoading }: PuckEditorProps) {
         config={config}
         data={data}
         onPublish={handleSave}
+        headerTitle="Visual Editor"
         overrides={{
-          header: ({ actions, children }) => (
-            <div className="bg-card border-b border-border px-4 py-2 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <span className="font-semibold text-foreground">Visual Editor</span>
-                {children}
-              </div>
-              <div className="flex items-center gap-2">
-                {isLoading && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <i className="fas fa-spinner fa-spin"></i>
-                    Saving...
-                  </div>
-                )}
-                {actions}
-              </div>
+          headerActions: () => (
+            <div className="flex items-center gap-2">
+              {isLoading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <i className="fas fa-spinner fa-spin"></i>
+                  Saving...
+                </div>
+              )}
             </div>
           ),
         }}

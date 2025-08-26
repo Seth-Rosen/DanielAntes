@@ -27,7 +27,7 @@ export default function Builder() {
   // Load existing page if pageId is provided
   const { data: page, isLoading } = useQuery({
     queryKey: ["/api/pages", pageId],
-    queryFn: () => api.getPages().then(pages => pages.find((p: any) => p.id === pageId)),
+    queryFn: () => pageId ? api.getPages().then(pages => pages.find((p: any) => p.id === pageId)) : null,
     enabled: !!pageId && isLoggedIn,
   });
 
@@ -39,8 +39,16 @@ export default function Builder() {
         data: page.data || { content: [], root: { props: { title: page.title } } },
         published: page.published,
       });
+    } else if (!pageId) {
+      // Reset to new page defaults when no pageId
+      setPageData({
+        title: "New Page",
+        slug: "new-page", 
+        data: { content: [], root: { props: { title: "New Page" } } },
+        published: false,
+      });
     }
-  }, [page]);
+  }, [page, pageId]);
 
   const savePageMutation = useMutation({
     mutationFn: (data: any) => {

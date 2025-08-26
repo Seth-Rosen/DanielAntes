@@ -71,6 +71,17 @@ Building a sophisticated, modular static website builder that starts as a portfo
 - Visual, non-technical user interface
 
 ## Recent Changes
-- Initial architecture planning
-- Defined modular static site builder approach
-- Established component-based architecture pattern
+- **August 26, 2025**: Fixed critical authentication issues
+  - Resolved token passing between frontend and backend
+  - Fixed image upload functionality with proper auth headers
+  - Enabled project creation and management
+- **August 26, 2025**: Enhanced page builder functionality
+  - Added existing page editing capability through admin dashboard
+  - Created default homepage with full component structure
+  - Resolved Puck.js duplicate element issues
+  - Implemented visual page management cards
+- **August 26, 2025**: Completed core admin functionality
+  - Working image upload with project association and tagging
+  - Functional project management system
+  - Page creation, editing, and publishing workflow
+  - Clean, professional admin interface
