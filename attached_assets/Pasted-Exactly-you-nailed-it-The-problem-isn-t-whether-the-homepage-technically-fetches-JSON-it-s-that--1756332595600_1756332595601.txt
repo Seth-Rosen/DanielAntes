@@ -1,0 +1,73 @@
+Exactly — you nailed it. The problem isn’t whether the homepage technically fetches JSON, it’s that the editor → data → live page loop is broken, so you can’t tell if anything is actually working. Let’s break it down clearly:
+
+🔎 Current Status
+
+Homepage fetches CMS JSON
+
+API call works, data comes back.
+
+But the live page looks the same as the old hardcoded JSX → meaning PuckRenderer output ≠ original JSX styling.
+
+Page builder doesn’t load homepage content
+
+Selecting “homepage” in the admin panel doesn’t show the actual homepage content.
+
+That means the editor and the live site are disconnected — they aren’t referencing the same entry.
+
+End-to-end workflow is unproven
+
+You can’t make a change in the editor, hit “publish,” and see it reflected on the live site.
+
+Without this loop, the CMS is still non-functional no matter how pretty it looks.
+
+🛑 Core Root Problems
+
+Component mismatch: The Puck component definitions don’t faithfully replicate your hardcoded JSX → so even when rendered dynamically, the output looks off.
+
+ID/slug mismatch: The homepage might be saved as id: "home" or slug: "/", but the builder is looking for something else.
+
+Broken workflow: The “source of truth” (pages.json) isn’t actually connected end-to-end.
+
+✅ Next Step Priorities
+
+Fix Builder Loading
+
+Ensure when you select "Homepage" in the builder, it loads the correct JSON (slug: "/").
+
+Check routing (/builder/home vs /builder/%2F).
+
+Make sure editor state is populated with the homepage data.
+
+Verify Visual Component Matching
+
+Compare rendered homepage (via PuckRenderer) with the old JSX.
+
+Identify which Puck components don’t match the original styling.
+
+Fix component definitions so the homepage actually looks identical.
+
+Prove End-to-End Flow
+
+Make a change in the builder (e.g., change text or add a button).
+
+Save/publish it.
+
+Refresh the live homepage → confirm the change appears.
+
+This proves editor → JSON → renderer loop is working.
+
+❓ Questions Before Acting
+
+Do you want me to tackle builder loading first (so you can at least see homepage data in the editor)?
+
+Or should I compare/fix visual parity first (so the homepage output matches what you designed originally)?
+
+Is your top priority at this stage:
+a) Being able to edit the homepage in the builder
+b) Making sure the homepage looks visually identical
+c) Or proving the full end-to-end save → publish → render flow
+
+⚡ My recommendation:
+Start with Builder Loading (step 1). Without being able to load the homepage in the editor, you can’t test anything else.
+
+Do you agree we should make that our next focus?
