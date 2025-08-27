@@ -69,7 +69,7 @@ export const api = {
   },
 
   getPageBySlug: async (slug: string) => {
-    const response = await apiRequest("GET", `/api/pages/slug/${slug}`);
+    const response = await apiRequest("GET", `/api/pages/slug/${encodeURIComponent(slug)}`);
     return response.json();
   },
 
