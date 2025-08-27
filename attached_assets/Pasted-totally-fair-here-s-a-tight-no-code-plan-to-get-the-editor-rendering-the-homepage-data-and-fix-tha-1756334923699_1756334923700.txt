@@ -1,0 +1,137 @@
+totally fair. here’s a tight, no-code plan to get the editor rendering the homepage data and fix that tiny canvas, in the exact order that will surface the real culprit fastest.
+
+Plan (no code yet)
+A) Prove the editor is wired to the right prop names
+
+Why: If we pass the right data to the wrong prop (value vs data / initialData), Puck renders an empty page no matter how perfect the JSON is.
+
+Open your PuckEditor wrapper and confirm:
+
+You render <Puck … data={pageData} onChange={setPageData} /> (or whatever Puck’s current API expects).
+
+You are not passing value={…} or initialData={…} unless the docs explicitly require those.
+
+You are not wrapping <Puck> in a conditional that briefly renders it with undefined/empty data (mount order matters).
+
+Acceptance check: Console log right above the <Puck> call:
+console.log('Puck receives data:', pageData) → it shows the 5 sections every render.
+
+B) Make the canvas full-height so you can actually interact
+
+Why: The skinny gray strip means the container lacks height; even if data loads, you can’t drop or see items.
+
+Ensure the page layout container provides height:
+
+The element wrapping <Puck> should have min-height: 100vh (or equivalent).
+
+If there’s a header, compute height (e.g., height: calc(100vh - 64px)).
+
+If you use Tailwind: className="min-h-screen" on the editor page’s main wrapper is a quick diagnostic.
+
+Acceptance check: With no components, the canvas fills the viewport. With one component added, it renders fully instead of in a sliver.
+
+C) Confirm the root config + types are recognized
+
+Why: Without a recognized root, Puck has nowhere to put children → outline says “No items”.
+
+In your puck-config:
+
+export const config: Config<UserConfig, RootProps> = { components: {…}, root: { render: ({children}) => <div>{children}</div>, fields: { title: { type: 'text' } }, defaultProps: { title: 'Homepage' } } }
+
+Ensure the same generic types are used where <Puck> is instantiated (if required).
+
+Temporarily loosen props on your components (optional fields) to avoid strict validation silently dropping blocks.
+
+Acceptance check: With a hardcoded minimal data object (next step), outline shows “1 item”.
+
+D) Minimal working data injection (isolate data vs config)
+
+Why: We need a control case. If this renders, config + canvas are fine; the homepage JSON is the mismatch.
+
+Temporarily bypass your fetch and pass this literal data into <Puck>:
+
+const demo = {
+  root: { props: { title: "Test" } },
+  content: [
+    { type: "HeroSection", props: {} }
+  ]
+};
+
+
+If this doesn’t render, the issue is config/props/canvas, not your homepage data.
+
+Acceptance check: Outline shows “1 item” and the hero appears.
+
+E) Validate your homepage data against the config
+
+Why: Puck will ignore blocks it can’t resolve (unknown type, invalid props, etc.).
+
+Build a quick “validator” in your head (or log in dev tools):
+
+For each item in content:
+
+type exists in config.components (exact string match, case-sensitive).
+
+props only include keys defined (or tolerated) by each component’s fields.
+
+Provide defaultProps for every field you mark as required.
+
+If some blocks don’t appear, comment them out and add back one-by-one to find the offending component.
+
+Acceptance check: As you add items back, outline count increases and each block renders.
+
+F) Ensure the editor and the page use the same document
+
+Why: You observed: Page metadata loads, but canvas is empty. That often means you’re editing “home” while the live data comes from a different slug/id or file.
+
+Single source of truth:
+
+The builder route /builder/home resolves to exactly the object the homepage route uses (same id/slug).
+
+If homepage uses slug:"/", confirm the builder fetch also resolves by slug or maps pageId -> slug.
+
+Verify you are not defaulting to {content: [], root:{}} when the query is still loading.
+
+Acceptance check: A tiny text change in the editor (in a known block) shows up immediately in the live preview route after save.
+
+G) Instrumentation to catch silent drops
+
+Why: If Puck drops blocks due to validation, you won’t see errors by default.
+
+Add development logs:
+
+Log the resolved config.components keys.
+
+Log the set of content[].type strings from your page JSON.
+
+Diff them to spot any mismatches.
+
+Wrap <Puck> in an error boundary and log onChange payloads to ensure the shape is what you expect.
+
+Acceptance check: You can see a clear, matching set of component names and onChange emits the same shape you pass in.
+
+H) Only after the editor loop is proven, move to image uploads
+
+Why: Uploads depend on being able to place an image block and see it render.
+
+Decide upload strategy (Express + multer, public /uploads, return URL).
+
+Wire an “image” field with a custom uploader callback in Puck (or a simple URL input first).
+
+Confirm URLs render on both editor and live page.
+
+Acceptance check: Drag in an image block → upload → see it render in editor and on live.
+
+why this is not “lost the plot”
+
+We’re not adding features. We’re isolating the three things that make Puck show “No items”:
+
+wrong prop name into <Puck>,
+
+root not recognized (or types too strict),
+
+data not matching the registered components’ schemas.
+
+The canvas sizing fix is just so you can actually interact during debugging.
+
+If you want, I can turn this into a one-page “Replit Work Plan” checklist you can paste in your project notes, with each acceptance check as a checkbox.
