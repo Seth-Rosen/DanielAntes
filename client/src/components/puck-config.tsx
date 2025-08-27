@@ -44,10 +44,17 @@ export type UserConfig = {
   };
 };
 
-export const config: Config<UserConfig> = {
+export type RootProps = {
+  title: string;
+};
+
+export const config: Config<UserConfig, RootProps> = {
   root: {
     fields: {
       title: { type: "text" },
+    },
+    defaultProps: {
+      title: "Homepage",
     },
     render: ({ children, title }) => (
       <div data-title={title}>
