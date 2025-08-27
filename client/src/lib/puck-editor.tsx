@@ -14,7 +14,7 @@ export function PuckEditor({ data, onSave, isLoading }: PuckEditorProps) {
   };
 
   return (
-    <div className="h-full min-h-screen puck-root" data-testid="puck-editor">
+    <div className="h-full w-full puck-root" data-testid="puck-editor" style={{ height: '100%' }}>
       <Puck
         config={config}
         data={data}

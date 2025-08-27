@@ -183,7 +183,7 @@ export default function Builder() {
       </div>
 
       {/* Puck Editor */}
-      <div className="h-[calc(100vh-73px)] min-h-screen">
+      <div className="h-[calc(100vh-73px)]">
         <PuckEditor 
           data={pageData.data}
           onSave={handleSave}
