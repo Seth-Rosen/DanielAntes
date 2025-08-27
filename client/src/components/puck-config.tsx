@@ -45,6 +45,16 @@ export type UserConfig = {
 };
 
 export const config: Config<UserConfig> = {
+  root: {
+    fields: {
+      title: { type: "text" },
+    },
+    render: ({ children, title }) => (
+      <div data-title={title}>
+        {children}
+      </div>
+    ),
+  },
   components: {
     HeroSection: {
       fields: {

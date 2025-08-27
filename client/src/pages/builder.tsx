@@ -103,13 +103,6 @@ export default function Builder() {
     savePageMutation.mutate(saveData);
   };
 
-  // DEBUG: Log the data being passed to PuckEditor
-  console.log("=== BUILDER DEBUG ===");
-  console.log("Page data loaded:", page?.data);
-  console.log("Current pageData state:", pageData);
-  console.log("Data being passed to PuckEditor:", pageData.data);
-  console.log("=====================");
-
   return (
     <div className="min-h-screen bg-background text-foreground" data-testid="page-builder">
       {/* Builder Header */}
