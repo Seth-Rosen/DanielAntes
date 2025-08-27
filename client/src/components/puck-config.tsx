@@ -3,6 +3,7 @@ import { HeroSection, TypesSection, ProjectsCarousel, PortfolioSection, StorySec
 
 export type UserConfig = {
   HeroSection: {
+    id?: string;
     title: string;
     subtitle: string;
     backgroundImage?: string;
@@ -10,6 +11,7 @@ export type UserConfig = {
     ctaSecondary: string;
   };
   TypesSection: {
+    id?: string;
     title: string;
     subtitle: string;
     types: Array<{
@@ -19,23 +21,27 @@ export type UserConfig = {
     }>;
   };
   ProjectsCarousel: {
+    id?: string;
     title: string;
     subtitle: string;
     featured?: boolean;
   };
   PortfolioSection: {
+    id?: string;
     title: string;
     subtitle: string;
     showFilters: boolean;
     availableTags: Array<{ value: string }>;
   };
   StorySection: {
+    id?: string;
     title: string;
     paragraphs: Array<{ value: string }>;
     experienceYears: string;
     ctaText: string;
   };
   ContactSection: {
+    id?: string;
     title: string;
     subtitle: string;
     phone: string;
@@ -65,6 +71,7 @@ export const config: Config<UserConfig, RootProps> = {
   components: {
     HeroSection: {
       fields: {
+        id: { type: "text" },
         title: { type: "text" },
         subtitle: { type: "textarea" },
         backgroundImage: { type: "text" },
@@ -81,6 +88,7 @@ export const config: Config<UserConfig, RootProps> = {
     },
     TypesSection: {
       fields: {
+        id: { type: "text" },
         title: { type: "text" },
         subtitle: { type: "textarea" },
         types: {
@@ -122,6 +130,7 @@ export const config: Config<UserConfig, RootProps> = {
     },
     ProjectsCarousel: {
       fields: {
+        id: { type: "text" },
         title: { type: "text" },
         subtitle: { type: "text" },
         featured: { type: "radio", options: [
@@ -169,6 +178,7 @@ export const config: Config<UserConfig, RootProps> = {
     },
     StorySection: {
       fields: {
+        id: { type: "text" },
         title: { type: "text" },
         paragraphs: {
           type: "array",
@@ -203,6 +213,7 @@ export const config: Config<UserConfig, RootProps> = {
     },
     ContactSection: {
       fields: {
+        id: { type: "text" },
         title: { type: "text" },
         subtitle: { type: "textarea" },
         phone: { type: "text" },

@@ -13,24 +13,11 @@ export function PuckEditor({ data, onSave, isLoading }: PuckEditorProps) {
     onSave(data);
   };
 
-  // STEP D: Test minimal working data (bypass real data temporarily)
-  const minimalTestData = {
-    root: { props: { title: "Test" } },
-    content: [
-      { type: "HeroSection", props: {} }
-    ]
-  };
-
-  console.log("=== STEP D - MINIMAL DATA TEST ===");
-  console.log("Using test data instead of real data");
-  console.log("Test data:", minimalTestData);
-  console.log("==================================");
-
   return (
     <div className="h-full min-h-screen puck-root" data-testid="puck-editor">
       <Puck
         config={config}
-        data={minimalTestData}
+        data={data}
         onPublish={handleSave}
         headerTitle="Visual Editor"
         overrides={{
