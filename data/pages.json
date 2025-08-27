@@ -5,7 +5,9 @@
     "slug": "/",
     "published": true,
     "data": {
-      "content": [],
+      "content": {
+        "main": []
+      },
       "root": {
         "props": {
           "title": "Homepage"

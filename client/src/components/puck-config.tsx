@@ -1,4 +1,4 @@
-import { Config } from "@measured/puck";
+import { Config, DropZone } from "@measured/puck";
 import { HeroSection, TypesSection, ProjectsCarousel, PortfolioSection, StorySection, ContactSection } from "./site-components";
 
 export type UserConfig = {
@@ -62,9 +62,13 @@ export const config: Config<UserConfig, RootProps> = {
     defaultProps: {
       title: "Homepage",
     },
-    render: ({ children, title }) => (
+    render: ({ title }) => (
       <div data-title={title}>
-        {children}
+        <DropZone 
+          zone="main" 
+          minEmptyHeight={600}
+          style={{ minHeight: '100vh' }}
+        />
       </div>
     ),
   },
