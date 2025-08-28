@@ -1,15 +1,31 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/layout/navigation";
 import { Footer } from "@/components/layout/footer";
 import { PuckRenderer } from "@/components/puck-renderer";
-import { api } from "@/lib/api";
+import { storage } from "@/lib/storage";
+import { Page } from "@shared/schema";
 
 export default function Home() {
-  // Fetch homepage content from CMS
-  const { data: page, isLoading, error } = useQuery({
-    queryKey: ["/api/pages/slug", "/"],
-    queryFn: () => api.getPageBySlug("/"),
-  });
+  // Fetch homepage content from static storage
+  const [page, setPage] = useState<Page | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    async function loadPage() {
+      try {
+        setIsLoading(true);
+        const homePage = await storage.getPageBySlug("/");
+        setPage(homePage);
+      } catch (err) {
+        console.error('Failed to load homepage:', err);
+        setError('Failed to load page');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadPage();
+  }, []);
 
   // Loading state
   if (isLoading) {

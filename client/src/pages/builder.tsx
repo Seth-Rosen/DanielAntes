@@ -1,74 +1,100 @@
 import { useParams } from "wouter";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { storage } from "@/lib/storage";
 import { useLocation } from "wouter";
 import { PuckEditor } from "@/lib/puck-editor";
+import { Page } from "@shared/schema";
 
 export default function Builder() {
   const { pageId } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   
   const [isLoggedIn, setIsLoggedIn] = useState(auth.isAuthenticated());
+  const [isLoading, setIsLoading] = useState(!!pageId);
+  const [isSaving, setIsSaving] = useState(false);
   const [pageData, setPageData] = useState({
     title: "New Page",
     slug: "new-page", 
-    data: { content: [], root: { props: { title: "" } } },
+    data: { content: [], root: { props: { title: "" } } } as any,
     published: false,
   });
 
   // Load existing page if pageId is provided
-  const { data: page, isLoading } = useQuery({
-    queryKey: ["/api/pages", pageId],
-    queryFn: () => pageId ? api.getPages().then(pages => pages.find((p: any) => p.id === pageId)) : null,
-    enabled: !!pageId && isLoggedIn,
-  });
-
   useEffect(() => {
-    if (page) {
-      setPageData({
-        title: page.title,
-        slug: page.slug,
-        data: page.data || { content: [], root: { props: { title: page.title } } },
-        published: page.published,
-      });
-    } else if (!pageId) {
-      // Reset to new page defaults when no pageId
-      setPageData({
-        title: "New Page",
-        slug: "new-page", 
-        data: { content: [], root: { props: { title: "New Page" } } },
-        published: false,
-      });
-    }
-  }, [page, pageId]);
-
-  const savePageMutation = useMutation({
-    mutationFn: (data: any) => {
-      if (pageId) {
-        return api.updatePage(pageId, data);
-      } else {
-        return api.createPage(data);
+    async function loadPage() {
+      if (pageId && isLoggedIn) {
+        try {
+          setIsLoading(true);
+          const page = await storage.getPage(pageId);
+          if (page) {
+            setPageData({
+              title: page.title,
+              slug: page.slug,
+              data: page.data && typeof page.data === 'object' ? page.data : { content: [], root: { props: { title: page.title } } },
+              published: page.published,
+            });
+          }
+        } catch (error) {
+          console.error('Failed to load page:', error);
+          toast({ title: "Failed to load page", variant: "destructive" });
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (!pageId) {
+        // Reset to new page defaults when no pageId
+        setPageData({
+          title: "New Page",
+          slug: "new-page", 
+          data: { content: [], root: { props: { title: "New Page" } } } as any,
+          published: false,
+        });
+        setIsLoading(false);
       }
-    },
-    onSuccess: (savedPage) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pages"] });
-      toast({ title: "Page saved successfully" });
+    }
+    
+    loadPage();
+  }, [pageId, isLoggedIn, toast]);
+
+  const savePage = async (data: any, publish: boolean = false) => {
+    try {
+      setIsSaving(true);
+      
+      const saveData = {
+        title: pageData.title,
+        slug: pageData.slug,
+        data,
+        published: publish || pageData.published,
+        ...(pageId && { id: pageId })
+      };
+      
+      const savedPage = await storage.savePage(saveData);
+      
+      toast({ 
+        title: publish ? "Page published successfully" : "Page saved successfully" 
+      });
+      
       if (!pageId) {
         setLocation(`/builder/${savedPage.id}`);
+      } else {
+        setPageData(prev => ({ ...prev, published: savedPage.published }));
       }
-    },
-    onError: () => {
-      toast({ title: "Failed to save page", variant: "destructive" });
-    },
-  });
+      
+    } catch (error) {
+      console.error('Failed to save page:', error);
+      toast({ 
+        title: publish ? "Failed to publish page" : "Failed to save page", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (!isLoggedIn) {
     setLocation("/admin");
@@ -84,23 +110,11 @@ export default function Builder() {
   }
 
   const handleSave = (data: any) => {
-    const saveData = {
-      title: pageData.title,
-      slug: pageData.slug,
-      data,
-      published: pageData.published,
-    };
-    savePageMutation.mutate(saveData);
+    savePage(data, false);
   };
 
   const handlePublish = () => {
-    const saveData = {
-      title: pageData.title,
-      slug: pageData.slug,
-      data: pageData.data,
-      published: true,
-    };
-    savePageMutation.mutate(saveData);
+    savePage(pageData.data, true);
   };
 
   return (
@@ -163,10 +177,10 @@ export default function Builder() {
               variant="outline"
               size="sm"
               onClick={handlePublish}
-              disabled={savePageMutation.isPending}
+              disabled={isSaving}
               data-testid="button-publish"
             >
-              {savePageMutation.isPending ? (
+              {isSaving ? (
                 <>
                   <i className="fas fa-spinner fa-spin mr-2"></i>
                   Publishing...
@@ -187,7 +201,7 @@ export default function Builder() {
         <PuckEditor 
           data={pageData.data}
           onSave={handleSave}
-          isLoading={savePageMutation.isPending}
+          isLoading={isSaving}
         />
       </div>
     </div>

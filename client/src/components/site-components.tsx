@@ -1,12 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { api } from "@/lib/api";
+import { storage } from "@/lib/storage";
 import { useLocation } from "wouter";
+import { Image, Project } from "@shared/schema";
 
 // HeroSection Component
 export const HeroSection = ({ title, subtitle, backgroundImage, ctaPrimary, ctaSecondary }: {
@@ -18,12 +18,21 @@ export const HeroSection = ({ title, subtitle, backgroundImage, ctaPrimary, ctaS
 }) => {
   const [, setLocation] = useLocation();
 
-  const { data: images = [] } = useQuery({
-    queryKey: ["/api/images"],
-    queryFn: () => api.getImages({ tag: "slideshow" }),
-  });
+  const [images, setImages] = useState<Image[]>([]);
+  
+  useEffect(() => {
+    async function loadImages() {
+      try {
+        const allImages = await storage.getImages();
+        setImages(allImages.filter(img => img.slideshow));
+      } catch (error) {
+        console.error('Failed to load images:', error);
+      }
+    }
+    loadImages();
+  }, []);
 
-  const slideshowImages = images.filter((img: any) => img.slideshow);
+  const slideshowImages = images;
 
   const handleScrollToSection = (sectionId: string) => {
     const element = document.querySelector(sectionId);
@@ -153,11 +162,22 @@ export const ProjectsCarousel = ({ title, subtitle, featured }: {
   featured?: boolean;
 }) => {
   const [, setLocation] = useLocation();
-
-  const { data: projects = [], isLoading: projectsLoading } = useQuery({
-    queryKey: ["/api/projects"],
-    queryFn: () => api.getProjects(),
-  });
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  
+  useEffect(() => {
+    async function loadProjects() {
+      try {
+        const projectsData = await storage.getProjects();
+        setProjects(projectsData);
+      } catch (error) {
+        console.error('Failed to load projects:', error);
+      } finally {
+        setProjectsLoading(false);
+      }
+    }
+    loadProjects();
+  }, []);
 
   const displayProjects = featured ? projects.filter((project: any) => project.featured) : projects;
 
@@ -221,16 +241,29 @@ export const PortfolioSection = ({ title, subtitle, showFilters, availableTags }
   availableTags: Array<{ value: string }>;
 }) => {
   const [selectedTag, setSelectedTag] = useState<string>("all");
-
-  const { data: projects = [], isLoading: projectsLoading } = useQuery({
-    queryKey: ["/api/projects"],
-    queryFn: () => api.getProjects(),
-  });
-
-  const { data: allImages = [], isLoading: imagesLoading } = useQuery({
-    queryKey: ["/api/images"],
-    queryFn: () => api.getImages(),
-  });
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [allImages, setAllImages] = useState<Image[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [imagesLoading, setImagesLoading] = useState(true);
+  
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [projectsData, imagesData] = await Promise.all([
+          storage.getProjects(),
+          storage.getImages()
+        ]);
+        setProjects(projectsData);
+        setAllImages(imagesData);
+      } catch (error) {
+        console.error('Failed to load portfolio data:', error);
+      } finally {
+        setProjectsLoading(false);
+        setImagesLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   // Filter projects based on selected tag
   const filteredProjects = projects.filter((project: any) => {

@@ -1,70 +1,111 @@
-import { api } from "./api";
+// Client-side authentication for static admin interface
 
-class AuthManager {
-  private sessionId: string | null = null;
+export interface AuthState {
+  isAuthenticated: boolean;
+  sessionId?: string;
+  expiresAt?: Date;
+}
 
+class ClientAuth {
+  private authState: AuthState = { isAuthenticated: false };
+  private readonly STORAGE_KEY = 'admin_auth';
+  private readonly SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+  
   constructor() {
-    this.sessionId = localStorage.getItem("sessionId");
+    this.loadAuthState();
   }
-
+  
+  private loadAuthState(): void {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (stored) {
+        const authData = JSON.parse(stored);
+        if (authData.expiresAt && new Date(authData.expiresAt) > new Date()) {
+          this.authState = {
+            isAuthenticated: true,
+            sessionId: authData.sessionId,
+            expiresAt: new Date(authData.expiresAt)
+          };
+        } else {
+          this.clearAuth();
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load auth state:', error);
+      this.clearAuth();
+    }
+  }
+  
+  private saveAuthState(): void {
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
+        sessionId: this.authState.sessionId,
+        expiresAt: this.authState.expiresAt?.toISOString()
+      }));
+    } catch (error) {
+      console.warn('Failed to save auth state:', error);
+    }
+  }
+  
+  private clearAuth(): void {
+    this.authState = { isAuthenticated: false };
+    localStorage.removeItem(this.STORAGE_KEY);
+  }
+  
   async login(username: string, password: string): Promise<boolean> {
     try {
-      const response = await api.login(username, password);
-      this.sessionId = response.sessionId;
-      localStorage.setItem("sessionId", response.sessionId);
-      localStorage.setItem("sessionExpires", response.expires);
-      return true;
+      // For development - simple hardcoded auth
+      // In production, this would validate against hosting provider or encrypted config
+      const validCredentials = (
+        username === 'admin' && 
+        password === (import.meta.env.VITE_ADMIN_PASSWORD || 'admin123')
+      );
+      
+      if (validCredentials) {
+        const sessionId = crypto.randomUUID();
+        const expiresAt = new Date(Date.now() + this.SESSION_DURATION);
+        
+        this.authState = {
+          isAuthenticated: true,
+          sessionId,
+          expiresAt
+        };
+        
+        this.saveAuthState();
+        return true;
+      }
+      
+      return false;
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error('Login error:', error);
       return false;
     }
   }
-
-  async logout(): Promise<void> {
-    try {
-      await api.logout();
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-    
-    this.sessionId = null;
-    localStorage.removeItem("sessionId");
-    localStorage.removeItem("sessionExpires");
+  
+  logout(): void {
+    this.clearAuth();
   }
-
+  
   isAuthenticated(): boolean {
-    if (!this.sessionId) return false;
-    
-    const expires = localStorage.getItem("sessionExpires");
-    if (!expires) return false;
-    
-    return new Date() < new Date(expires);
-  }
-
-  getAuthHeaders(): Record<string, string> {
-    if (this.sessionId) {
-      return {
-        "Authorization": `Bearer ${this.sessionId}`,
-      };
+    if (!this.authState.isAuthenticated || !this.authState.expiresAt) {
+      return false;
     }
-    return {};
+    
+    if (this.authState.expiresAt <= new Date()) {
+      this.clearAuth();
+      return false;
+    }
+    
+    return true;
+  }
+  
+  getSessionId(): string | undefined {
+    return this.isAuthenticated() ? this.authState.sessionId : undefined;
+  }
+  
+  getExpiresAt(): Date | undefined {
+    return this.isAuthenticated() ? this.authState.expiresAt : undefined;
   }
 }
 
-export const auth = new AuthManager();
-
-// Override fetch to include auth headers
-const originalApiRequest = api;
-const originalFetch = window.fetch;
-
-window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-  const headers = {
-    ...init?.headers,
-    ...auth.getAuthHeaders(),
-  };
-
-  return originalFetch(input, {
-    ...init,
-    headers,
-  });
-};
+export const auth = new ClientAuth();

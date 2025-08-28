@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/layout/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,13 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { storage } from "@/lib/storage";
 import { useLocation } from "wouter";
+import { Page, Project, Image } from "@shared/schema";
 
 export default function Admin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   
   const [isLoggedIn, setIsLoggedIn] = useState(auth.isAuthenticated());
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
@@ -27,54 +26,100 @@ export default function Admin() {
     carouselFeature: false, 
     featured: false 
   });
+  
+  // Static storage state
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [images, setImages] = useState<Image[]>([]);
+  const [pages, setPages] = useState<Page[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ["/api/projects"],
-    queryFn: () => api.getProjects(),
-    enabled: isLoggedIn,
-  });
+  // Load data when authenticated
+  useEffect(() => {
+    async function loadData() {
+      if (isLoggedIn) {
+        try {
+          setIsLoading(true);
+          const [projectsData, imagesData, pagesData] = await Promise.all([
+            storage.getProjects(),
+            storage.getImages(),
+            storage.getPages()
+          ]);
+          setProjects(projectsData);
+          setImages(imagesData);
+          setPages(pagesData);
+        } catch (error) {
+          console.error('Failed to load data:', error);
+          toast({ title: "Failed to load data", variant: "destructive" });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    }
+    
+    loadData();
+  }, [isLoggedIn, toast]);
 
-  const { data: images = [] } = useQuery({
-    queryKey: ["/api/images"],
-    queryFn: () => api.getImages(),
-    enabled: isLoggedIn,
-  });
-
-  const { data: pages = [] } = useQuery({
-    queryKey: ["/api/pages"],
-    queryFn: () => api.getPages(),
-    enabled: isLoggedIn,
-  });
-
-  const loginMutation = useMutation({
-    mutationFn: ({ username, password }: { username: string; password: string }) => 
-      auth.login(username, password),
-    onSuccess: (success) => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const success = await auth.login(loginForm.username, loginForm.password);
       if (success) {
         setIsLoggedIn(true);
         toast({ title: "Login successful" });
       } else {
         toast({ title: "Login failed", description: "Invalid credentials", variant: "destructive" });
       }
-    },
-  });
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({ title: "Login failed", variant: "destructive" });
+    }
+  };
 
-  const createProjectMutation = useMutation({
-    mutationFn: (data: any) => api.createProject(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+  const createProject = async () => {
+    try {
+      const tags = projectForm.tags ? projectForm.tags.split(",").map(tag => tag.trim()) : [];
+      const newProject = await storage.saveProject({
+        title: projectForm.title,
+        description: projectForm.description,
+        tags,
+        images: [],
+        featured: false,
+      });
+      
+      setProjects(prev => [...prev, newProject]);
       setProjectForm({ title: "", description: "", tags: "" });
       toast({ title: "Project created successfully" });
-    },
-    onError: () => {
+    } catch (error) {
+      console.error('Failed to create project:', error);
       toast({ title: "Failed to create project", variant: "destructive" });
-    },
-  });
+    }
+  };
 
-  const uploadImageMutation = useMutation({
-    mutationFn: (formData: FormData) => api.uploadImage(formData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/images"] });
+  const uploadImage = async () => {
+    if (!selectedFiles || selectedFiles.length === 0) {
+      toast({ title: "Please select files", variant: "destructive" });
+      return;
+    }
+    
+    try {
+      // For now, we'll simulate image upload by creating image records
+      // In a real static implementation, images would be handled by the hosting provider
+      const tags = imageForm.tags ? imageForm.tags.split(",").map(tag => tag.trim()) : [];
+      
+      for (const file of Array.from(selectedFiles)) {
+        const newImage = await storage.saveImage({
+          filename: file.name,
+          originalName: file.name,
+          projectId: imageForm.projectId || undefined,
+          tags,
+          slideshow: imageForm.slideshow,
+          carouselFeature: imageForm.carouselFeature,
+          featured: imageForm.featured,
+        });
+        
+        setImages(prev => [...prev, newImage]);
+      }
+      
       setSelectedFiles(null);
       setImageForm({ 
         projectId: "", 
@@ -83,28 +128,24 @@ export default function Admin() {
         carouselFeature: false, 
         featured: false 
       });
-      toast({ title: "Image uploaded successfully" });
-    },
-    onError: () => {
-      toast({ title: "Failed to upload image", variant: "destructive" });
-    },
-  });
-
-  const deleteImageMutation = useMutation({
-    mutationFn: (id: string) => api.deleteImage(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/images"] });
-      toast({ title: "Image deleted successfully" });
-    },
-    onError: () => {
-      toast({ title: "Failed to delete image", variant: "destructive" });
-    },
-  });
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    loginMutation.mutate(loginForm);
+      toast({ title: "Images uploaded successfully" });
+    } catch (error) {
+      console.error('Failed to upload images:', error);
+      toast({ title: "Failed to upload images", variant: "destructive" });
+    }
   };
+
+  const deleteImage = async (id: string) => {
+    try {
+      await storage.deleteImage(id);
+      setImages(prev => prev.filter(img => img.id !== id));
+      toast({ title: "Image deleted successfully" });
+    } catch (error) {
+      console.error('Failed to delete image:', error);
+      toast({ title: "Failed to delete image", variant: "destructive" });
+    }
+  };
+
 
   const handleLogout = async () => {
     await auth.logout();
@@ -114,32 +155,12 @@ export default function Admin() {
 
   const handleCreateProject = (e: React.FormEvent) => {
     e.preventDefault();
-    const tags = projectForm.tags ? projectForm.tags.split(",").map(tag => tag.trim()) : [];
-    createProjectMutation.mutate({
-      title: projectForm.title,
-      description: projectForm.description,
-      tags,
-      images: [],
-      featured: false,
-    });
+    createProject();
   };
 
   const handleUploadImage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFiles || selectedFiles.length === 0) {
-      toast({ title: "Please select an image file", variant: "destructive" });
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("image", selectedFiles[0]);
-    if (imageForm.projectId) formData.append("projectId", imageForm.projectId);
-    formData.append("tags", JSON.stringify(imageForm.tags.split(",").map(tag => tag.trim()).filter(Boolean)));
-    formData.append("slideshow", imageForm.slideshow.toString());
-    formData.append("carouselFeature", imageForm.carouselFeature.toString());
-    formData.append("featured", imageForm.featured.toString());
-
-    uploadImageMutation.mutate(formData);
+    uploadImage();
   };
 
   if (!isLoggedIn) {
@@ -178,10 +199,10 @@ export default function Admin() {
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={loginMutation.isPending}
+                  disabled={isLoading}
                   data-testid="button-login"
                 >
-                  {loginMutation.isPending ? "Logging in..." : "Login"}
+                  {isLoading ? "Logging in..." : "Login"}
                 </Button>
               </form>
             </CardContent>
@@ -271,10 +292,10 @@ export default function Admin() {
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={createProjectMutation.isPending}
+                    disabled={isLoading}
                     data-testid="button-create-project"
                   >
-                    {createProjectMutation.isPending ? "Creating..." : "Create Project"}
+                    {isLoading ? "Creating..." : "Create Project"}
                   </Button>
                 </form>
 
@@ -385,10 +406,10 @@ export default function Admin() {
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={uploadImageMutation.isPending}
+                    disabled={isLoading}
                     data-testid="button-upload-image"
                   >
-                    {uploadImageMutation.isPending ? "Uploading..." : "Upload Image"}
+                    {isLoading ? "Uploading..." : "Upload Image"}
                   </Button>
                 </form>
               </CardContent>
@@ -463,7 +484,7 @@ export default function Admin() {
                         <Button 
                           size="sm" 
                           variant="destructive"
-                          onClick={() => deleteImageMutation.mutate(image.id)}
+                          onClick={() => deleteImage(image.id)}
                           data-testid={`button-delete-image-${image.id}`}
                         >
                           <i className="fas fa-trash text-xs"></i>
