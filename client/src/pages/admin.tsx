@@ -82,7 +82,8 @@ export default function Admin() {
         description: projectForm.description,
         images: [],
         tags,
-        featured: false
+        featured: false,
+        order: 0
       });
       
       setProjects([...projects, newProject]);
@@ -122,7 +123,9 @@ export default function Admin() {
         const newImage = await storage.saveImage({
           filename: file.name,
           originalName: file.name,
-          projectId: imageForm.projectId || undefined,
+          url: `/uploads/${file.name}`,  // Placeholder URL for now
+          alt: "",
+          projectIds: imageForm.projectId ? [imageForm.projectId] : [],
           tags,
           slideshow: imageForm.slideshow,
           carouselFeature: imageForm.carouselFeature,

@@ -1,18 +1,31 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { storage } from "@/lib/storage";
+import { Page } from "@shared/schema";
 
 export function Navigation() {
   const [location] = useLocation();
+  const [pages, setPages] = useState<Page[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const navItems = [
-    { href: "/", label: "Home" },
-    { href: "/portfolio", label: "Portfolio" },
-    { href: "#story", label: "My Story" },
-    { href: "#press", label: "Press" },
-    { href: "#awards", label: "Awards" },
-    { href: "#resources", label: "Industry Resources" },
-    { href: "#contact", label: "Contact" },
-  ];
+  useEffect(() => {
+    async function loadPages() {
+      try {
+        const allPages = await storage.getPages();
+        // Filter for published pages that should show in nav
+        const navPages = allPages
+          .filter(p => p.published && p.showInNav)
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
+        setPages(navPages);
+      } catch (error) {
+        console.error('Failed to load navigation pages:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadPages();
+  }, []);
 
   const handleNavClick = (href: string) => {
     if (href.startsWith("#")) {
@@ -37,32 +50,51 @@ export function Navigation() {
           
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              {navItems.map((item) => (
-                <div key={item.href}>
-                  {item.href.startsWith("#") ? (
-                    <button
-                      onClick={() => handleNavClick(item.href)}
-                      className="text-muted-foreground hover:text-primary transition-colors duration-200"
-                      data-testid={`nav-link-${item.label.toLowerCase().replace(" ", "-")}`}
-                    >
-                      {item.label}
-                    </button>
-                  ) : (
-                    <Link href={item.href}>
-                      <span
-                        className={`transition-colors duration-200 ${
-                          location === item.href
-                            ? "text-primary"
-                            : "text-muted-foreground hover:text-primary"
-                        }`}
-                        data-testid={`nav-link-${item.label.toLowerCase().replace(" ", "-")}`}
+              {/* Home is always first */}
+              <Link href="/">
+                <span
+                  className={`transition-colors duration-200 ${
+                    location === "/"
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-primary"
+                  }`}
+                  data-testid="nav-link-home"
+                >
+                  Home
+                </span>
+              </Link>
+
+              {/* Dynamic pages from storage */}
+              {!isLoading && pages.map((page) => {
+                const pageHref = `/${page.slug}`;
+                
+                return (
+                  <div key={page.id}>
+                    {page.slug.startsWith("#") ? (
+                      <button
+                        onClick={() => handleNavClick(page.slug)}
+                        className="text-muted-foreground hover:text-primary transition-colors duration-200"
+                        data-testid={`nav-link-${page.slug.replace("#", "")}`}
                       >
-                        {item.label}
-                      </span>
-                    </Link>
-                  )}
-                </div>
-              ))}
+                        {page.title}
+                      </button>
+                    ) : (
+                      <Link href={pageHref}>
+                        <span
+                          className={`transition-colors duration-200 ${
+                            location === pageHref
+                              ? "text-primary"
+                              : "text-muted-foreground hover:text-primary"
+                          }`}
+                          data-testid={`nav-link-${page.slug}`}
+                        >
+                          {page.title}
+                        </span>
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
               
               <Link href="/admin">
                 <Button variant="outline" size="sm" data-testid="admin-link">

@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { storage } from "@/lib/storage";
 import { useLocation } from "wouter";
 import { PuckEditor } from "@/lib/puck-editor";
-import { Page } from "@shared/schema";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Builder() {
   const { pageId } = useParams();
@@ -20,9 +20,11 @@ export default function Builder() {
     title: "New Page",
     slug: "new-page", 
     data: { content: { main: [] }, root: { props: { title: "New Page" } } } as any,
-    published: false,
+    published: true,
+    showInNav: true,
+    order: 0,
+    seo: { description: "" },
   });
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Load existing page if pageId is provided
   useEffect(() => {
@@ -51,6 +53,9 @@ export default function Builder() {
               slug: page.slug,
               data: puckData,
               published: page.published,
+              showInNav: page.showInNav ?? true,
+              order: page.order ?? 0,
+              seo: page.seo ?? { description: "" },
             });
           }
         } catch (error) {
@@ -65,7 +70,10 @@ export default function Builder() {
           title: "New Page",
           slug: "new-page", 
           data: { content: { main: [] }, root: { props: { title: "New Page" } } },
-          published: false,
+          published: true,
+          showInNav: true,
+          order: 0,
+          seo: { description: "" },
         });
         setIsLoading(false);
       }
@@ -74,7 +82,7 @@ export default function Builder() {
     loadPage();
   }, [pageId, toast]);
 
-  const savePage = async (data: any, publish: boolean = false) => {
+  const handleSaveAndPublish = async (data: any) => {
     try {
       setIsSaving(true);
       
@@ -82,15 +90,18 @@ export default function Builder() {
         title: pageData.title,
         slug: pageData.slug,
         data,
-        published: publish || pageData.published,
+        published: pageData.published,
+        showInNav: pageData.showInNav,
+        order: pageData.order,
+        seo: pageData.seo,
         ...(pageId && { id: pageId })
       };
       
       const savedPage = await storage.savePage(saveData);
       
       toast({ 
-        title: publish ? "Page published!" : "Page saved!",
-        description: "Changes saved locally (in-memory only for now)"
+        title: "Page saved!",
+        description: pageData.published ? `Page is live at /${savedPage.slug}` : "Page saved as unpublished"
       });
       
       // If it was a new page, navigate to the edit URL
@@ -108,38 +119,8 @@ export default function Builder() {
     }
   };
 
-  const handlePublish = async (data: any) => {
-    try {
-      const savedPage = await savePage(data, true);
-      setPageData(prev => ({ ...prev, published: true }));
-      setHasUnsavedChanges(false);
-      
-      toast({ 
-        title: "Page published!",
-        description: `Your changes are now live at ${savedPage.slug}`
-      });
-    } catch (error) {
-      // Error already handled in savePage
-    }
-  };
-
-  const handleSaveDraft = async (data: any) => {
-    try {
-      await savePage(data, false);
-      setHasUnsavedChanges(false);
-      
-      toast({ 
-        title: "Draft saved!",
-        description: "Your changes have been saved as a draft"
-      });
-    } catch (error) {
-      // Error already handled in savePage
-    }
-  };
-
   const handleDataChange = (data: any) => {
     setPageData(prev => ({ ...prev, data }));
-    setHasUnsavedChanges(true);
   };
 
   if (isLoading) {
@@ -179,62 +160,59 @@ export default function Builder() {
             </div>
             
             <div className="flex items-center gap-2">
-              <Label htmlFor="page-slug">Slug:</Label>
+              <Label htmlFor="page-slug">URL:</Label>
+              <span className="text-muted-foreground">/</span>
               <Input
                 id="page-slug"
                 value={pageData.slug}
                 onChange={(e) => setPageData(prev => ({ ...prev, slug: e.target.value }))}
                 className="w-48"
-                placeholder="/page-url"
+                placeholder="page-url"
                 data-testid="input-page-slug"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Label htmlFor="page-order">Order:</Label>
+              <Input
+                id="page-order"
+                type="number"
+                value={pageData.order}
+                onChange={(e) => setPageData(prev => ({ ...prev, order: parseInt(e.target.value) || 0 }))}
+                className="w-20"
+                data-testid="input-page-order"
               />
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            {hasUnsavedChanges ? (
-              <span className="text-sm text-amber-600 dark:text-amber-400 px-2 py-1 bg-amber-50 dark:bg-amber-950 rounded">
-                Unsaved changes
-              </span>
-            ) : pageData.published ? (
-              <span className="text-sm text-green-600 dark:text-green-400 px-2 py-1 bg-green-50 dark:bg-green-950 rounded">
-                Published
-              </span>
-            ) : (
-              <span className="text-sm text-muted-foreground px-2 py-1 bg-muted rounded">
-                Draft
-              </span>
-            )}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="show-in-nav"
+                checked={pageData.showInNav}
+                onCheckedChange={(checked) => setPageData(prev => ({ ...prev, showInNav: checked as boolean }))}
+              />
+              <Label htmlFor="show-in-nav">Show in Navigation</Label>
+            </div>
             
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleSaveDraft(pageData.data)}
-              disabled={isSaving || !hasUnsavedChanges}
-              data-testid="button-save-draft"
-            >
-              Save Draft
-            </Button>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="published"
+                checked={pageData.published}
+                onCheckedChange={(checked) => setPageData(prev => ({ ...prev, published: checked as boolean }))}
+              />
+              <Label htmlFor="published">Published</Label>
+            </div>
             
             <Button
               variant="default"
               size="sm"
-              onClick={() => handlePublish(pageData.data)}
+              onClick={() => handleSaveAndPublish(pageData.data)}
               disabled={isSaving}
-              className="bg-green-600 hover:bg-green-700"
-              data-testid="button-publish"
+              className="bg-primary hover:bg-primary/90"
+              data-testid="button-save"
             >
-              {isSaving ? "Publishing..." : "Publish"}
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(pageData.slug, '_blank')}
-              disabled={!pageData.published}
-              data-testid="button-preview"
-            >
-              Preview Live
+              {isSaving ? "Saving..." : "Save Page"}
             </Button>
           </div>
         </div>
@@ -244,7 +222,7 @@ export default function Builder() {
       <div className="flex-1 overflow-hidden">
         <PuckEditor
           data={pageData.data}
-          onSave={handlePublish}
+          onSave={handleSaveAndPublish}
           onChange={handleDataChange}
           isLoading={isSaving}
         />
