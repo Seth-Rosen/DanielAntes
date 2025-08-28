@@ -5,14 +5,92 @@
     "slug": "/",
     "published": true,
     "data": {
-      "content": [],
       "root": {
         "props": {
           "title": "Homepage"
         }
+      },
+      "content": [],
+      "zones": {
+        "root:main": [
+          {
+            "type": "HeroSection",
+            "props": {
+              "title": "Master Artisan\nMarquetry & Flooring",
+              "subtitle": "something",
+              "ctaPrimary": "View Portfolio",
+              "ctaSecondary": "Get In Touch",
+              "id": "HeroSection-c7767af9-531d-4a23-97dc-029a662f2af2"
+            }
+          },
+          {
+            "type": "TypesSection",
+            "props": {
+              "title": "Types of Marquetry",
+              "subtitle": "Each style represents decades of refined technique and artistic vision, creating floors that are both functional masterpieces and works of art.",
+              "types": [
+                {
+                  "name": "Parquet",
+                  "subtitle": "Classic geometric patterns",
+                  "tag": "parquet"
+                },
+                {
+                  "name": "Medallion",
+                  "subtitle": "Circular masterpieces",
+                  "tag": "medallion"
+                },
+                {
+                  "name": "Mandala",
+                  "subtitle": "Spiritual symmetry",
+                  "tag": "mandala"
+                }
+              ],
+              "id": "TypesSection-2709ee63-56fb-42c8-92fb-ef633de24a3c"
+            }
+          }
+        ]
       }
     },
     "createdAt": "2025-01-01T00:00:00.000Z",
-    "updatedAt": "2025-01-01T00:00:00.000Z"
+    "updatedAt": "2025-08-28T19:10:09.406Z"
+  },
+  {
+    "title": "New Page",
+    "slug": "new-page",
+    "data": {
+      "root": {
+        "props": {
+          "title": "New Page"
+        }
+      },
+      "content": [],
+      "zones": {
+        "root:main": [
+          {
+            "type": "HeroSection",
+            "props": {
+              "title": "Master Artisan\nMarquetry & Flooring",
+              "subtitle": "Crafting bespoke hardwood floors and intricate marquetry with three decades of artistic excellence",
+              "ctaPrimary": "View Portfolio",
+              "ctaSecondary": "Get In Touch",
+              "id": "HeroSection-2c9ec00d-91dd-460e-a281-1f649e64666f"
+            }
+          },
+          {
+            "type": "ProjectsCarousel",
+            "props": {
+              "title": "Featured Projects",
+              "subtitle": "Recent masterpieces showcasing artistic excellence",
+              "featured": true,
+              "id": "ProjectsCarousel-f110b382-7c85-43a7-8ed8-8f81bf594b99"
+            }
+          }
+        ]
+      }
+    },
+    "published": true,
+    "id": "ee2e320d-9634-4e23-bc1e-22f5e0f71dc4",
+    "createdAt": "2025-08-28T19:03:45.800Z",
+    "updatedAt": "2025-08-28T19:04:39.634Z"
   }
 ]
