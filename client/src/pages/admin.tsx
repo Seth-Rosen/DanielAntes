@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/auth";
 import { storage } from "@/lib/storage";
 import { useLocation } from "wouter";
 import { Page, Project, Image } from "@shared/schema";
@@ -15,8 +14,6 @@ export default function Admin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
-  const [isLoggedIn, setIsLoggedIn] = useState(auth.isAuthenticated());
-  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [projectForm, setProjectForm] = useState({ title: "", description: "", tags: "" });
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [imageForm, setImageForm] = useState({ 
@@ -33,80 +30,95 @@ export default function Admin() {
   const [pages, setPages] = useState<Page[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load data when authenticated
+  // Load data on mount
   useEffect(() => {
     async function loadData() {
-      if (isLoggedIn) {
-        try {
-          setIsLoading(true);
-          const [projectsData, imagesData, pagesData] = await Promise.all([
-            storage.getProjects(),
-            storage.getImages(),
-            storage.getPages()
-          ]);
-          setProjects(projectsData);
-          setImages(imagesData);
-          setPages(pagesData);
-        } catch (error) {
-          console.error('Failed to load data:', error);
-          toast({ title: "Failed to load data", variant: "destructive" });
-        } finally {
-          setIsLoading(false);
-        }
+      try {
+        setIsLoading(true);
+        const [projectsData, imagesData, pagesData] = await Promise.all([
+          storage.getProjects(),
+          storage.getImages(),
+          storage.getPages()
+        ]);
+        setProjects(projectsData);
+        setImages(imagesData);
+        setPages(pagesData);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+        toast({ title: "Failed to load data", variant: "destructive" });
+      } finally {
+        setIsLoading(false);
       }
     }
     
     loadData();
-  }, [isLoggedIn, toast]);
+  }, [toast]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreatePage = () => {
+    setLocation("/builder");
+  };
+
+  const handleEditPage = (pageId: string) => {
+    setLocation(`/builder/${pageId}`);
+  };
+
+  const handleDeletePage = async (pageId: string) => {
     try {
-      const success = await auth.login(loginForm.username, loginForm.password);
-      if (success) {
-        setIsLoggedIn(true);
-        toast({ title: "Login successful" });
-      } else {
-        toast({ title: "Login failed", description: "Invalid credentials", variant: "destructive" });
-      }
+      await storage.deletePage(pageId);
+      setPages(pages.filter(p => p.id !== pageId));
+      toast({ title: "Page deleted", description: "Changes saved locally" });
     } catch (error) {
-      console.error('Login error:', error);
-      toast({ title: "Login failed", variant: "destructive" });
+      console.error('Failed to delete page:', error);
+      toast({ title: "Failed to delete page", variant: "destructive" });
     }
   };
 
-  const createProject = async () => {
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const tags = projectForm.tags ? projectForm.tags.split(",").map(tag => tag.trim()) : [];
+      const tags = projectForm.tags.split(',').map(t => t.trim()).filter(t => t);
       const newProject = await storage.saveProject({
         title: projectForm.title,
         description: projectForm.description,
-        tags,
         images: [],
-        featured: false,
+        tags,
+        featured: false
       });
       
-      setProjects(prev => [...prev, newProject]);
+      setProjects([...projects, newProject]);
       setProjectForm({ title: "", description: "", tags: "" });
-      toast({ title: "Project created successfully" });
+      toast({ title: "Project created", description: "Changes saved locally" });
     } catch (error) {
       console.error('Failed to create project:', error);
       toast({ title: "Failed to create project", variant: "destructive" });
     }
   };
 
-  const uploadImage = async () => {
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      await storage.deleteProject(projectId);
+      setProjects(projects.filter(p => p.id !== projectId));
+      toast({ title: "Project deleted", description: "Changes saved locally" });
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      toast({ title: "Failed to delete project", variant: "destructive" });
+    }
+  };
+
+  const handleUploadImage = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!selectedFiles || selectedFiles.length === 0) {
-      toast({ title: "Please select files", variant: "destructive" });
+      toast({ title: "Please select files to upload", variant: "destructive" });
       return;
     }
-    
+
     try {
-      // For now, we'll simulate image upload by creating image records
-      // In a real static implementation, images would be handled by the hosting provider
-      const tags = imageForm.tags ? imageForm.tags.split(",").map(tag => tag.trim()) : [];
+      const tags = imageForm.tags.split(',').map(t => t.trim()).filter(t => t);
       
-      for (const file of Array.from(selectedFiles)) {
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        // For now, just create image records with file names
+        // In production, we'd upload to GitHub or cloud storage
         const newImage = await storage.saveImage({
           filename: file.name,
           originalName: file.name,
@@ -114,10 +126,10 @@ export default function Admin() {
           tags,
           slideshow: imageForm.slideshow,
           carouselFeature: imageForm.carouselFeature,
-          featured: imageForm.featured,
+          featured: imageForm.featured
         });
         
-        setImages(prev => [...prev, newImage]);
+        setImages([...images, newImage]);
       }
       
       setSelectedFiles(null);
@@ -128,85 +140,36 @@ export default function Admin() {
         carouselFeature: false, 
         featured: false 
       });
-      toast({ title: "Images uploaded successfully" });
+      
+      toast({ 
+        title: `${selectedFiles.length} image(s) uploaded`, 
+        description: "File records created locally" 
+      });
     } catch (error) {
       console.error('Failed to upload images:', error);
       toast({ title: "Failed to upload images", variant: "destructive" });
     }
   };
 
-  const deleteImage = async (id: string) => {
+  const handleDeleteImage = async (imageId: string) => {
     try {
-      await storage.deleteImage(id);
-      setImages(prev => prev.filter(img => img.id !== id));
-      toast({ title: "Image deleted successfully" });
+      await storage.deleteImage(imageId);
+      setImages(images.filter(i => i.id !== imageId));
+      toast({ title: "Image deleted", description: "Changes saved locally" });
     } catch (error) {
       console.error('Failed to delete image:', error);
       toast({ title: "Failed to delete image", variant: "destructive" });
     }
   };
 
-
-  const handleLogout = async () => {
-    await auth.logout();
-    setIsLoggedIn(false);
-    toast({ title: "Logged out successfully" });
-  };
-
-  const handleCreateProject = (e: React.FormEvent) => {
-    e.preventDefault();
-    createProject();
-  };
-
-  const handleUploadImage = (e: React.FormEvent) => {
-    e.preventDefault();
-    uploadImage();
-  };
-
-  if (!isLoggedIn) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <Navigation />
-        <div className="pt-20 flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <Card className="w-full max-w-md" data-testid="login-card">
-            <CardHeader>
-              <CardTitle data-testid="login-title">Admin Login</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    type="text"
-                    value={loginForm.username}
-                    onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                    required
-                    data-testid="input-username"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={loginForm.password}
-                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                    required
-                    data-testid="input-password"
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading}
-                  data-testid="button-login"
-                >
-                  {isLoading ? "Logging in..." : "Login"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+        <div className="pt-20 flex items-center justify-center h-64">
+          <div className="animate-pulse">
+            <div className="w-48 h-8 bg-muted rounded"></div>
+          </div>
         </div>
       </div>
     );
@@ -216,47 +179,84 @@ export default function Admin() {
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
       
-      <section className="pt-20 py-12 px-4 sm:px-6 lg:px-8" data-testid="admin-dashboard">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-serif font-bold mb-4" data-testid="dashboard-title">
-                Admin Dashboard
-              </h1>
-              <p className="text-muted-foreground" data-testid="dashboard-description">
-                Manage your portfolio content and projects
-              </p>
-            </div>
-            <div className="flex gap-4">
-              <Button 
-                onClick={() => setLocation("/builder")} 
-                variant="outline"
-                data-testid="button-page-builder"
-              >
-                <i className="fas fa-edit mr-2"></i>
-                New Page
-              </Button>
-              <Button 
-                onClick={handleLogout} 
-                variant="outline"
-                data-testid="button-logout"
-              >
-                Logout
-              </Button>
-            </div>
+      <main className="pt-20 px-6 lg:px-8 pb-12">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
+          
+          <div className="mb-4 p-4 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              Note: This is a local-only admin interface. Changes are saved in-memory and will be lost on refresh.
+              GitHub integration coming in Phase 3.
+            </p>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Project Management */}
-            <Card data-testid="project-management-card">
+            {/* Pages Management */}
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <i className="fas fa-folder mr-2 text-primary"></i>
-                  Project Management
-                </CardTitle>
+                <CardTitle>Pages</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <form onSubmit={handleCreateProject} className="space-y-4">
+              <CardContent>
+                <Button 
+                  onClick={handleCreatePage} 
+                  className="w-full mb-4"
+                  data-testid="button-create-page"
+                >
+                  Create New Page
+                </Button>
+                
+                <div className="space-y-2">
+                  {pages.map((page) => (
+                    <div 
+                      key={page.id} 
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">{page.title}</p>
+                        <p className="text-sm text-muted-foreground">{page.slug}</p>
+                        {page.published && (
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                            Published
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditPage(page.id)}
+                          data-testid={`button-edit-page-${page.id}`}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeletePage(page.id)}
+                          data-testid={`button-delete-page-${page.id}`}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {pages.length === 0 && (
+                    <p className="text-muted-foreground text-center py-4">
+                      No pages yet. Create your first page!
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Projects Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Projects</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleCreateProject} className="space-y-4 mb-4">
                   <div>
                     <Label htmlFor="project-title">Project Title</Label>
                     <Input
@@ -275,7 +275,6 @@ export default function Admin() {
                       value={projectForm.description}
                       onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
                       placeholder="Enter project description"
-                      required
                       data-testid="textarea-project-description"
                     />
                   </div>
@@ -289,55 +288,61 @@ export default function Admin() {
                       data-testid="input-project-tags"
                     />
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={isLoading}
-                    data-testid="button-create-project"
-                  >
-                    {isLoading ? "Creating..." : "Create Project"}
+                  <Button type="submit" className="w-full" data-testid="button-create-project">
+                    Create Project
                   </Button>
                 </form>
-
-                <div className="space-y-2" data-testid="existing-projects">
-                  <h4 className="font-semibold">Existing Projects:</h4>
-                  {projects.map((project: any) => (
+                
+                <div className="space-y-2">
+                  {projects.map((project) => (
                     <div 
                       key={project.id} 
-                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                      data-testid={`project-item-${project.id}`}
+                      className="flex items-center justify-between p-3 border rounded-lg"
                     >
-                      <span data-testid={`project-name-${project.id}`}>{project.title}</span>
-                      <div className="flex gap-2">
-                        <span className="text-sm text-muted-foreground">
-                          {project.images?.length || 0} images
-                        </span>
+                      <div>
+                        <p className="font-medium">{project.title}</p>
+                        {project.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-1">
+                            {project.description}
+                          </p>
+                        )}
                       </div>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteProject(project.id)}
+                        data-testid={`button-delete-project-${project.id}`}
+                      >
+                        Delete
+                      </Button>
                     </div>
                   ))}
+                  
+                  {projects.length === 0 && (
+                    <p className="text-muted-foreground text-center py-4">
+                      No projects yet.
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
             
             {/* Image Upload */}
-            <Card data-testid="image-upload-card">
+            <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <i className="fas fa-images mr-2 text-primary"></i>
-                  Image Upload
-                </CardTitle>
+                <CardTitle>Upload Images</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <form onSubmit={handleUploadImage} className="space-y-4">
                   <div>
-                    <Label htmlFor="image-file">Select Image</Label>
+                    <Label htmlFor="image-files">Select Images</Label>
                     <Input
-                      id="image-file"
+                      id="image-files"
                       type="file"
+                      multiple
                       accept="image/*"
                       onChange={(e) => setSelectedFiles(e.target.files)}
-                      required
-                      data-testid="input-image-file"
+                      data-testid="input-image-files"
                     />
                   </div>
                   
@@ -345,13 +350,13 @@ export default function Admin() {
                     <Label htmlFor="image-project">Project (optional)</Label>
                     <select
                       id="image-project"
-                      className="w-full bg-input border border-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-ring"
                       value={imageForm.projectId}
                       onChange={(e) => setImageForm({ ...imageForm, projectId: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-md"
                       data-testid="select-image-project"
                     >
-                      <option value="">Select project...</option>
-                      {projects.map((project: any) => (
+                      <option value="">No Project</option>
+                      {projects.map((project) => (
                         <option key={project.id} value={project.id}>
                           {project.title}
                         </option>
@@ -365,162 +370,81 @@ export default function Admin() {
                       id="image-tags"
                       value={imageForm.tags}
                       onChange={(e) => setImageForm({ ...imageForm, tags: e.target.value })}
-                      placeholder="parquet, medallion, mandala"
+                      placeholder="parquet, medallion, living-room"
                       data-testid="input-image-tags"
                     />
                   </div>
                   
-                  <div className="grid grid-cols-1 gap-4">
-                    <label className="flex items-center space-x-2">
-                      <input 
-                        type="checkbox" 
-                        className="rounded" 
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
                         checked={imageForm.slideshow}
                         onChange={(e) => setImageForm({ ...imageForm, slideshow: e.target.checked })}
-                        data-testid="checkbox-slideshow"
                       />
-                      <span className="text-sm">Use in slideshow</span>
+                      <span>Include in Slideshow</span>
                     </label>
-                    <label className="flex items-center space-x-2">
-                      <input 
-                        type="checkbox" 
-                        className="rounded" 
+                    
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
                         checked={imageForm.carouselFeature}
                         onChange={(e) => setImageForm({ ...imageForm, carouselFeature: e.target.checked })}
-                        data-testid="checkbox-carousel"
                       />
-                      <span className="text-sm">Featured in carousel</span>
+                      <span>Carousel Feature</span>
                     </label>
-                    <label className="flex items-center space-x-2">
-                      <input 
-                        type="checkbox" 
-                        className="rounded" 
+                    
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
                         checked={imageForm.featured}
                         onChange={(e) => setImageForm({ ...imageForm, featured: e.target.checked })}
-                        data-testid="checkbox-featured"
                       />
-                      <span className="text-sm">Featured image</span>
+                      <span>Featured</span>
                     </label>
                   </div>
                   
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={isLoading}
-                    data-testid="button-upload-image"
-                  >
-                    {isLoading ? "Uploading..." : "Upload Image"}
+                  <Button type="submit" className="w-full" data-testid="button-upload-images">
+                    Upload Images
                   </Button>
                 </form>
+                
+                {/* Images List */}
+                {images.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="font-semibold mb-3">Uploaded Images</h3>
+                    <div className="space-y-2">
+                      {images.map((image) => (
+                        <div 
+                          key={image.id}
+                          className="flex items-center justify-between p-2 border rounded"
+                        >
+                          <div>
+                            <p className="text-sm font-medium">{image.originalName}</p>
+                            {image.tags.length > 0 && (
+                              <p className="text-xs text-muted-foreground">
+                                Tags: {image.tags.join(', ')}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteImage(image.id)}
+                            data-testid={`button-delete-image-${image.id}`}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
-
-          {/* Pages Management */}
-          <Card className="mt-8" data-testid="pages-management-card">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <i className="fas fa-file-alt mr-2 text-primary"></i>
-                Pages Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="existing-pages">
-                {pages.map((page: any) => (
-                  <Card 
-                    key={page.id} 
-                    className="cursor-pointer hover:shadow-md transition-shadow border-border"
-                    onClick={() => setLocation(`/builder/${page.id}`)}
-                    data-testid={`page-card-${page.id}`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold truncate" data-testid={`page-title-${page.id}`}>
-                          {page.title}
-                        </h4>
-                        <div className={`w-2 h-2 rounded-full ${page.published ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2" data-testid={`page-slug-${page.id}`}>
-                        /{page.slug}
-                      </p>
-                      <div className="text-xs text-muted-foreground">
-                        {page.published ? 'Published' : 'Draft'}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                <Card 
-                  className="cursor-pointer hover:shadow-md transition-shadow border-dashed border-2 border-muted-foreground/30"
-                  onClick={() => setLocation("/builder")}
-                  data-testid="new-page-card"
-                >
-                  <CardContent className="p-4 flex items-center justify-center h-full">
-                    <div className="text-center text-muted-foreground">
-                      <i className="fas fa-plus text-2xl mb-2"></i>
-                      <div className="font-semibold">Create New Page</div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Image Gallery */}
-          <Card className="mt-8" data-testid="image-gallery-card">
-            <CardHeader>
-              <CardTitle>Uploaded Images</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {images.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" data-testid="image-gallery">
-                  {images.map((image: any) => (
-                    <div key={image.id} className="relative group" data-testid={`gallery-image-${image.id}`}>
-                      <img 
-                        src={`/uploads/${image.filename}`} 
-                        alt={image.originalName}
-                        className="w-full h-32 object-cover rounded-lg" 
-                      />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
-                        <Button 
-                          size="sm" 
-                          variant="destructive"
-                          onClick={() => deleteImage(image.id)}
-                          data-testid={`button-delete-image-${image.id}`}
-                        >
-                          <i className="fas fa-trash text-xs"></i>
-                        </Button>
-                      </div>
-                      {image.tags.length > 0 && (
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <div className="flex flex-wrap gap-1">
-                            {image.tags.slice(0, 2).map((tag: string) => (
-                              <span 
-                                key={tag}
-                                className="bg-primary/80 text-primary-foreground px-1 py-0.5 rounded text-xs"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                            {image.tags.length > 2 && (
-                              <span className="bg-primary/80 text-primary-foreground px-1 py-0.5 rounded text-xs">
-                                +{image.tags.length - 2}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground py-8" data-testid="no-images">
-                  No images uploaded yet.
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
-      </section>
+      </main>
     </div>
   );
 }

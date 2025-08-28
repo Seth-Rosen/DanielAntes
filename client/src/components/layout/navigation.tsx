@@ -1,6 +1,5 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { auth } from "@/lib/auth";
 
 export function Navigation() {
   const [location] = useLocation();
@@ -65,13 +64,11 @@ export function Navigation() {
                 </div>
               ))}
               
-              {auth.isAuthenticated() && (
-                <Link href="/admin">
-                  <Button variant="outline" size="sm" data-testid="admin-link">
-                    Admin
-                  </Button>
-                </Link>
-              )}
+              <Link href="/admin">
+                <Button variant="outline" size="sm" data-testid="admin-link">
+                  Admin
+                </Button>
+              </Link>
             </div>
           </div>
           

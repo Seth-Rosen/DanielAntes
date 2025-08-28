@@ -1,43 +1,43 @@
-// Static file storage implementation for client-side only architecture
+// Pure static file storage - no localStorage, no API calls
 import { Page, Project, Image, SiteSettings } from '@shared/schema';
 
 export interface IStaticStorage {
-  // Pages
+  // Read-only operations for live site
   getPages(): Promise<Page[]>;
   getPage(id: string): Promise<Page | null>;
   getPageBySlug(slug: string): Promise<Page | null>;
+  
+  getProjects(): Promise<Project[]>;
+  getProject(id: string): Promise<Project | null>;
+  
+  getImages(): Promise<Image[]>;
+  getImage(id: string): Promise<Image | null>;
+  
+  getSettings(): Promise<SiteSettings>;
+  
+  // Write operations for admin (future: GitHub API)
   savePage(page: Omit<Page, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Page>;
   deletePage(id: string): Promise<void>;
   
-  // Projects  
-  getProjects(): Promise<Project[]>;
-  getProject(id: string): Promise<Project | null>;
   saveProject(project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Project>;
   deleteProject(id: string): Promise<void>;
   
-  // Images
-  getImages(): Promise<Image[]>;
-  getImage(id: string): Promise<Image | null>;
   saveImage(image: Omit<Image, 'id' | 'uploadedAt'> & { id?: string }): Promise<Image>;
   deleteImage(id: string): Promise<void>;
   
-  // Settings
-  getSettings(): Promise<SiteSettings>;
   saveSettings(settings: SiteSettings): Promise<void>;
 }
 
-// Static file storage - reads from /data/*.json files
 export class StaticFileStorage implements IStaticStorage {
   private cache: Map<string, any> = new Map();
   
-  private async fetchStaticData<T>(filename: string): Promise<T> {
-    // Check cache first
-    if (this.cache.has(filename)) {
-      return this.cache.get(filename);
-    }
+  private async fetchData<T>(filename: string): Promise<T> {
+    // Clear cache for now to ensure fresh data
+    // if (this.cache.has(filename)) {
+    //   return this.cache.get(filename);
+    // }
     
     try {
-      // Fetch from static files in public directory
       const response = await fetch(`/data/${filename}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch ${filename}`);
@@ -46,50 +46,21 @@ export class StaticFileStorage implements IStaticStorage {
       this.cache.set(filename, data);
       return data;
     } catch (error) {
-      console.warn(`Could not load ${filename}:`, error);
-      // Return empty defaults based on filename
+      console.warn(`Could not load ${filename}, using defaults`);
+      // Return sensible defaults
       if (filename === 'pages.json') return [] as T;
       if (filename === 'projects.json') return [] as T;
       if (filename === 'images.json') return [] as T;
-      if (filename === 'settings.json') return { siteName: 'Daniel Antes', siteDescription: '' } as T;
+      if (filename === 'settings.json') {
+        return { siteName: 'Daniel Antes', siteDescription: '' } as T;
+      }
       return [] as T;
     }
   }
   
-  private async saveToLocalStorage<T>(key: string, data: T): Promise<void> {
-    // For admin operations, we'll save to localStorage temporarily
-    // In production, this would trigger a rebuild via Netlify Functions
-    try {
-      localStorage.setItem(`static_data_${key}`, JSON.stringify(data));
-      // Update cache
-      this.cache.set(key, data);
-      console.log(`[StaticFileStorage] Saved ${key}:`, data);
-    } catch (error) {
-      console.error(`Failed to save ${key}:`, error);
-    }
-  }
-  
-  private async getData<T>(filename: string): Promise<T> {
-    // Check localStorage first for admin modifications
-    const localKey = `static_data_${filename}`;
-    const localData = localStorage.getItem(localKey);
-    if (localData) {
-      try {
-        const parsed = JSON.parse(localData);
-        this.cache.set(filename, parsed);
-        return parsed;
-      } catch (error) {
-        console.warn(`Invalid localStorage data for ${filename}`);
-      }
-    }
-    
-    // Fall back to static files
-    return this.fetchStaticData<T>(filename);
-  }
-  
-  // Pages
+  // Read operations (for live site)
   async getPages(): Promise<Page[]> {
-    return await this.getData<Page[]>('pages.json');
+    return this.fetchData<Page[]>('pages.json');
   }
   
   async getPage(id: string): Promise<Page | null> {
@@ -102,12 +73,36 @@ export class StaticFileStorage implements IStaticStorage {
     return pages.find(p => p.slug === slug) || null;
   }
   
+  async getProjects(): Promise<Project[]> {
+    return this.fetchData<Project[]>('projects.json');
+  }
+  
+  async getProject(id: string): Promise<Project | null> {
+    const projects = await this.getProjects();
+    return projects.find(p => p.id === id) || null;
+  }
+  
+  async getImages(): Promise<Image[]> {
+    return this.fetchData<Image[]>('images.json');
+  }
+  
+  async getImage(id: string): Promise<Image | null> {
+    const images = await this.getImages();
+    return images.find(i => i.id === id) || null;
+  }
+  
+  async getSettings(): Promise<SiteSettings> {
+    return this.fetchData<SiteSettings>('settings.json');
+  }
+  
+  // Write operations (for admin - will be GitHub API in Phase 3)
   async savePage(pageData: Omit<Page, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Page> {
+    // Phase 2: In-memory only for testing
+    // Phase 3: Will use GitHub API to commit changes
     const pages = await this.getPages();
     const now = new Date().toISOString();
     
     if (pageData.id) {
-      // Update existing page
       const index = pages.findIndex(p => p.id === pageData.id);
       if (index !== -1) {
         const updatedPage: Page = {
@@ -116,12 +111,14 @@ export class StaticFileStorage implements IStaticStorage {
           updatedAt: now,
         };
         pages[index] = updatedPage;
-        await this.saveToLocalStorage('pages.json', pages);
+        // Clear cache so next read gets updated data
+        this.cache.delete('pages.json');
+        this.cache.set('pages.json', pages);
+        console.log('[Admin] Page updated (in-memory only):', updatedPage);
         return updatedPage;
       }
     }
     
-    // Create new page
     const newPage: Page = {
       ...pageData,
       id: pageData.id || crypto.randomUUID(),
@@ -130,24 +127,18 @@ export class StaticFileStorage implements IStaticStorage {
     };
     
     pages.push(newPage);
-    await this.saveToLocalStorage('pages.json', pages);
+    this.cache.delete('pages.json');
+    this.cache.set('pages.json', pages);
+    console.log('[Admin] Page created (in-memory only):', newPage);
     return newPage;
   }
   
   async deletePage(id: string): Promise<void> {
     const pages = await this.getPages();
     const filteredPages = pages.filter(p => p.id !== id);
-    await this.saveToLocalStorage('pages.json', filteredPages);
-  }
-  
-  // Projects
-  async getProjects(): Promise<Project[]> {
-    return await this.getData<Project[]>('projects.json');
-  }
-  
-  async getProject(id: string): Promise<Project | null> {
-    const projects = await this.getProjects();
-    return projects.find(p => p.id === id) || null;
+    this.cache.delete('pages.json');
+    this.cache.set('pages.json', filteredPages);
+    console.log('[Admin] Page deleted (in-memory only):', id);
   }
   
   async saveProject(projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Project> {
@@ -155,7 +146,6 @@ export class StaticFileStorage implements IStaticStorage {
     const now = new Date().toISOString();
     
     if (projectData.id) {
-      // Update existing project
       const index = projects.findIndex(p => p.id === projectData.id);
       if (index !== -1) {
         const updatedProject: Project = {
@@ -164,12 +154,13 @@ export class StaticFileStorage implements IStaticStorage {
           updatedAt: now,
         };
         projects[index] = updatedProject;
-        await this.saveToLocalStorage('projects.json', projects);
+        this.cache.delete('projects.json');
+        this.cache.set('projects.json', projects);
+        console.log('[Admin] Project updated (in-memory only):', updatedProject);
         return updatedProject;
       }
     }
     
-    // Create new project
     const newProject: Project = {
       ...projectData,
       id: projectData.id || crypto.randomUUID(),
@@ -178,24 +169,18 @@ export class StaticFileStorage implements IStaticStorage {
     };
     
     projects.push(newProject);
-    await this.saveToLocalStorage('projects.json', projects);
+    this.cache.delete('projects.json');
+    this.cache.set('projects.json', projects);
+    console.log('[Admin] Project created (in-memory only):', newProject);
     return newProject;
   }
   
   async deleteProject(id: string): Promise<void> {
     const projects = await this.getProjects();
     const filteredProjects = projects.filter(p => p.id !== id);
-    await this.saveToLocalStorage('projects.json', filteredProjects);
-  }
-  
-  // Images
-  async getImages(): Promise<Image[]> {
-    return await this.getData<Image[]>('images.json');
-  }
-  
-  async getImage(id: string): Promise<Image | null> {
-    const images = await this.getImages();
-    return images.find(i => i.id === id) || null;
+    this.cache.delete('projects.json');
+    this.cache.set('projects.json', filteredProjects);
+    console.log('[Admin] Project deleted (in-memory only):', id);
   }
   
   async saveImage(imageData: Omit<Image, 'id' | 'uploadedAt'> & { id?: string }): Promise<Image> {
@@ -203,7 +188,6 @@ export class StaticFileStorage implements IStaticStorage {
     const now = new Date().toISOString();
     
     if (imageData.id) {
-      // Update existing image
       const index = images.findIndex(i => i.id === imageData.id);
       if (index !== -1) {
         const updatedImage: Image = {
@@ -211,12 +195,13 @@ export class StaticFileStorage implements IStaticStorage {
           ...imageData,
         };
         images[index] = updatedImage;
-        await this.saveToLocalStorage('images.json', images);
+        this.cache.delete('images.json');
+        this.cache.set('images.json', images);
+        console.log('[Admin] Image updated (in-memory only):', updatedImage);
         return updatedImage;
       }
     }
     
-    // Create new image
     const newImage: Image = {
       ...imageData,
       id: imageData.id || crypto.randomUUID(),
@@ -224,23 +209,24 @@ export class StaticFileStorage implements IStaticStorage {
     };
     
     images.push(newImage);
-    await this.saveToLocalStorage('images.json', images);
+    this.cache.delete('images.json');
+    this.cache.set('images.json', images);
+    console.log('[Admin] Image created (in-memory only):', newImage);
     return newImage;
   }
   
   async deleteImage(id: string): Promise<void> {
     const images = await this.getImages();
     const filteredImages = images.filter(i => i.id !== id);
-    await this.saveToLocalStorage('images.json', filteredImages);
-  }
-  
-  // Settings
-  async getSettings(): Promise<SiteSettings> {
-    return await this.getData<SiteSettings>('settings.json');
+    this.cache.delete('images.json');
+    this.cache.set('images.json', filteredImages);
+    console.log('[Admin] Image deleted (in-memory only):', id);
   }
   
   async saveSettings(settings: SiteSettings): Promise<void> {
-    await this.saveToLocalStorage('settings.json', settings);
+    this.cache.delete('settings.json');
+    this.cache.set('settings.json', settings);
+    console.log('[Admin] Settings updated (in-memory only):', settings);
   }
 }
 

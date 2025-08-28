@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/auth";
 import { storage } from "@/lib/storage";
 import { useLocation } from "wouter";
 import { PuckEditor } from "@/lib/puck-editor";
@@ -15,7 +14,6 @@ export default function Builder() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
-  const [isLoggedIn, setIsLoggedIn] = useState(auth.isAuthenticated());
   const [isLoading, setIsLoading] = useState(!!pageId);
   const [isSaving, setIsSaving] = useState(false);
   const [pageData, setPageData] = useState({
@@ -28,15 +26,35 @@ export default function Builder() {
   // Load existing page if pageId is provided
   useEffect(() => {
     async function loadPage() {
-      if (pageId && isLoggedIn) {
+      if (pageId) {
         try {
           setIsLoading(true);
           const page = await storage.getPage(pageId);
           if (page) {
+            // Ensure page data is properly structured for Puck
+            console.log('Page loaded:', page);
+            console.log('Page data type:', typeof page.data);
+            console.log('Page data value:', page.data);
+            
+            let puckData;
+            if (page.data && typeof page.data === 'object') {
+              // Check if data has the correct structure
+              if (page.data.content && page.data.root) {
+                puckData = page.data;
+              } else {
+                console.warn('Invalid data structure, using defaults');
+                puckData = { content: { main: [] }, root: { props: { title: page.title } } };
+              }
+            } else {
+              puckData = { content: { main: [] }, root: { props: { title: page.title } } };
+            }
+            
+            console.log('Final puckData:', puckData);
+              
             setPageData({
               title: page.title,
               slug: page.slug,
-              data: page.data && typeof page.data === 'object' ? page.data : { content: { main: [] }, root: { props: { title: page.title } } },
+              data: puckData,
               published: page.published,
             });
           }
@@ -46,12 +64,12 @@ export default function Builder() {
         } finally {
           setIsLoading(false);
         }
-      } else if (!pageId) {
+      } else {
         // Reset to new page defaults when no pageId
         setPageData({
           title: "New Page",
           slug: "new-page", 
-          data: { content: { main: [] }, root: { props: { title: "New Page" } } } as any,
+          data: { content: { main: [] }, root: { props: { title: "New Page" } } },
           published: false,
         });
         setIsLoading(false);
@@ -59,7 +77,7 @@ export default function Builder() {
     }
     
     loadPage();
-  }, [pageId, isLoggedIn, toast]);
+  }, [pageId, toast]);
 
   const savePage = async (data: any, publish: boolean = false) => {
     try {
@@ -76,131 +94,116 @@ export default function Builder() {
       const savedPage = await storage.savePage(saveData);
       
       toast({ 
-        title: publish ? "Page published successfully" : "Page saved successfully" 
+        title: publish ? "Page published!" : "Page saved!",
+        description: "Changes saved locally (in-memory only for now)"
       });
       
+      // If it was a new page, navigate to the edit URL
       if (!pageId) {
         setLocation(`/builder/${savedPage.id}`);
-      } else {
-        setPageData(prev => ({ ...prev, published: savedPage.published }));
       }
       
+      return savedPage;
     } catch (error) {
       console.error('Failed to save page:', error);
-      toast({ 
-        title: publish ? "Failed to publish page" : "Failed to save page", 
-        variant: "destructive" 
-      });
+      toast({ title: "Failed to save page", variant: "destructive" });
+      throw error;
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (!isLoggedIn) {
-    setLocation("/admin");
-    return null;
-  }
+  const handlePublish = async (data: any) => {
+    try {
+      await savePage(data, true);
+      setPageData(prev => ({ ...prev, published: true }));
+    } catch (error) {
+      // Error already handled in savePage
+    }
+  };
+
+  const handleSave = async (data: any) => {
+    try {
+      await savePage(data, false);
+    } catch (error) {
+      // Error already handled in savePage
+    }
+  };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-muted-foreground">Loading page builder...</div>
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-pulse">
+          <div className="w-48 h-8 bg-muted rounded"></div>
+        </div>
       </div>
     );
   }
 
-  const handleSave = (data: any) => {
-    savePage(data, false);
-  };
-
-  const handlePublish = () => {
-    savePage(pageData.data, true);
-  };
-
   return (
-    <div className="min-h-screen bg-background text-foreground" data-testid="page-builder">
-      {/* Builder Header */}
-      <div className="border-b border-border bg-card">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
+    <div className="flex flex-col h-screen">
+      {/* Header Bar */}
+      <div className="border-b bg-background px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setLocation("/admin")}
-              data-testid="button-back-to-admin"
+              data-testid="button-back-admin"
             >
-              <i className="fas fa-arrow-left mr-2"></i>
-              Back to Admin
+              ← Back to Admin
             </Button>
-            <div className="flex items-center space-x-4">
-              <div>
-                <Label htmlFor="page-title" className="text-xs text-muted-foreground">Page Title</Label>
-                <Input
-                  id="page-title"
-                  value={pageData.title}
-                  onChange={(e) => setPageData({ ...pageData, title: e.target.value })}
-                  className="h-8 w-48 bg-transparent border-none focus:ring-1 focus:ring-primary"
-                  data-testid="input-page-title"
-                />
-              </div>
-              <div>
-                <Label htmlFor="page-slug" className="text-xs text-muted-foreground">Slug</Label>
-                <div className="flex items-center">
-                  <span className="text-sm text-muted-foreground">/</span>
-                  <Input
-                    id="page-slug"
-                    value={pageData.slug}
-                    onChange={(e) => setPageData({ ...pageData, slug: e.target.value })}
-                    className="h-8 w-32 bg-transparent border-none focus:ring-1 focus:ring-primary"
-                    data-testid="input-page-slug"
-                  />
-                </div>
-              </div>
+            
+            <div className="flex items-center gap-2">
+              <Label htmlFor="page-title">Title:</Label>
+              <Input
+                id="page-title"
+                value={pageData.title}
+                onChange={(e) => setPageData(prev => ({ ...prev, title: e.target.value }))}
+                className="w-48"
+                data-testid="input-page-title"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Label htmlFor="page-slug">Slug:</Label>
+              <Input
+                id="page-slug"
+                value={pageData.slug}
+                onChange={(e) => setPageData(prev => ({ ...prev, slug: e.target.value }))}
+                className="w-48"
+                placeholder="/page-url"
+                data-testid="input-page-slug"
+              />
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-2 text-sm">
-              <span className="text-muted-foreground">Published:</span>
-              <div className={`w-2 h-2 rounded-full ${pageData.published ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-              <span>{pageData.published ? 'Yes' : 'No'}</span>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.open(`/${pageData.slug}`, '_blank')}
-              data-testid="button-preview"
-            >
-              <i className="fas fa-eye mr-2"></i>
-              Preview
-            </Button>
-            <Button 
+          <div className="flex items-center gap-2">
+            {pageData.published && (
+              <span className="text-sm text-muted-foreground px-2 py-1 bg-muted rounded">
+                Published
+              </span>
+            )}
+            
+            <Button
               variant="outline"
               size="sm"
-              onClick={handlePublish}
-              disabled={isSaving}
-              data-testid="button-publish"
+              onClick={() => window.open(pageData.slug, '_blank')}
+              disabled={!pageData.published}
+              data-testid="button-preview"
             >
-              {isSaving ? (
-                <>
-                  <i className="fas fa-spinner fa-spin mr-2"></i>
-                  Publishing...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-globe mr-2"></i>
-                  Publish
-                </>
-              )}
+              Preview
             </Button>
           </div>
         </div>
       </div>
-
+      
       {/* Puck Editor */}
-      <div className="h-[calc(100vh-73px)]">
-        <PuckEditor 
+      <div className="flex-1 overflow-hidden">
+        <PuckEditor
           data={pageData.data}
-          onSave={handleSave}
+          onSave={handlePublish}
           isLoading={isSaving}
         />
       </div>
