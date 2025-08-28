@@ -21,7 +21,7 @@ export default function Builder() {
   const [pageData, setPageData] = useState({
     title: "New Page",
     slug: "new-page", 
-    data: { content: [], root: { props: { title: "" } } } as any,
+    data: { content: { main: [] }, root: { props: { title: "New Page" } } } as any,
     published: false,
   });
 
@@ -36,7 +36,7 @@ export default function Builder() {
             setPageData({
               title: page.title,
               slug: page.slug,
-              data: page.data && typeof page.data === 'object' ? page.data : { content: [], root: { props: { title: page.title } } },
+              data: page.data && typeof page.data === 'object' ? page.data : { content: { main: [] }, root: { props: { title: page.title } } },
               published: page.published,
             });
           }
@@ -51,7 +51,7 @@ export default function Builder() {
         setPageData({
           title: "New Page",
           slug: "new-page", 
-          data: { content: [], root: { props: { title: "New Page" } } } as any,
+          data: { content: { main: [] }, root: { props: { title: "New Page" } } } as any,
           published: false,
         });
         setIsLoading(false);
