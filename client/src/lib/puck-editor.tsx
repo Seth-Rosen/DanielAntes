@@ -5,12 +5,19 @@ import "@measured/puck/puck.css";
 interface PuckEditorProps {
   data: any;
   onSave: (data: any) => void;
+  onChange?: (data: any) => void;
   isLoading?: boolean;
 }
 
-export function PuckEditor({ data, onSave, isLoading }: PuckEditorProps) {
+export function PuckEditor({ data, onSave, onChange, isLoading }: PuckEditorProps) {
   const handleSave = (data: any) => {
     onSave(data);
+  };
+  
+  const handleChange = (data: any) => {
+    if (onChange) {
+      onChange(data);
+    }
   };
   
   // Puck expects either:
@@ -50,6 +57,7 @@ export function PuckEditor({ data, onSave, isLoading }: PuckEditorProps) {
         config={config}
         data={safeData}
         onPublish={handleSave}
+        onChange={handleChange}
         headerTitle="Visual Editor"
         overrides={{
           headerActions: () => (

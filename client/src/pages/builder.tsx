@@ -22,6 +22,7 @@ export default function Builder() {
     data: { content: { main: [] }, root: { props: { title: "New Page" } } } as any,
     published: false,
   });
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Load existing page if pageId is provided
   useEffect(() => {
@@ -109,16 +110,36 @@ export default function Builder() {
 
   const handlePublish = async (data: any) => {
     try {
-      await savePage(data, true);
+      const savedPage = await savePage(data, true);
       setPageData(prev => ({ ...prev, published: true }));
+      setHasUnsavedChanges(false);
       
-      // Reload the page to confirm save worked
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      toast({ 
+        title: "Page published!",
+        description: `Your changes are now live at ${savedPage.slug}`
+      });
     } catch (error) {
       // Error already handled in savePage
     }
+  };
+
+  const handleSaveDraft = async (data: any) => {
+    try {
+      await savePage(data, false);
+      setHasUnsavedChanges(false);
+      
+      toast({ 
+        title: "Draft saved!",
+        description: "Your changes have been saved as a draft"
+      });
+    } catch (error) {
+      // Error already handled in savePage
+    }
+  };
+
+  const handleDataChange = (data: any) => {
+    setPageData(prev => ({ ...prev, data }));
+    setHasUnsavedChanges(true);
   };
 
   if (isLoading) {
@@ -171,11 +192,40 @@ export default function Builder() {
           </div>
           
           <div className="flex items-center gap-2">
-            {pageData.published && (
-              <span className="text-sm text-muted-foreground px-2 py-1 bg-muted rounded">
+            {hasUnsavedChanges ? (
+              <span className="text-sm text-amber-600 dark:text-amber-400 px-2 py-1 bg-amber-50 dark:bg-amber-950 rounded">
+                Unsaved changes
+              </span>
+            ) : pageData.published ? (
+              <span className="text-sm text-green-600 dark:text-green-400 px-2 py-1 bg-green-50 dark:bg-green-950 rounded">
                 Published
               </span>
+            ) : (
+              <span className="text-sm text-muted-foreground px-2 py-1 bg-muted rounded">
+                Draft
+              </span>
             )}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSaveDraft(pageData.data)}
+              disabled={isSaving || !hasUnsavedChanges}
+              data-testid="button-save-draft"
+            >
+              Save Draft
+            </Button>
+            
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => handlePublish(pageData.data)}
+              disabled={isSaving}
+              className="bg-green-600 hover:bg-green-700"
+              data-testid="button-publish"
+            >
+              {isSaving ? "Publishing..." : "Publish"}
+            </Button>
             
             <Button
               variant="outline"
@@ -184,7 +234,7 @@ export default function Builder() {
               disabled={!pageData.published}
               data-testid="button-preview"
             >
-              Preview
+              Preview Live
             </Button>
           </div>
         </div>
@@ -195,6 +245,7 @@ export default function Builder() {
         <PuckEditor
           data={pageData.data}
           onSave={handlePublish}
+          onChange={handleDataChange}
           isLoading={isSaving}
         />
       </div>
