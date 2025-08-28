@@ -91,6 +91,11 @@
     "published": true,
     "id": "ee2e320d-9634-4e23-bc1e-22f5e0f71dc4",
     "createdAt": "2025-08-28T19:03:45.800Z",
-    "updatedAt": "2025-08-28T19:04:39.634Z"
+    "updatedAt": "2025-08-28T20:31:55.605Z",
+    "showInNav": true,
+    "order": 2,
+    "seo": {
+      "description": ""
+    }
   }
 ]
