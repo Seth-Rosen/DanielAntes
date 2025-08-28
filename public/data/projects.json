@@ -1,0 +1,15 @@
+[
+  {
+    "title": "Test Project",
+    "description": "A sample marquetry project",
+    "images": [],
+    "tags": [
+      "parquet",
+      "featured"
+    ],
+    "featured": true,
+    "id": "3657dd19-c576-4380-bf45-f0d1fe3a1f70",
+    "createdAt": "2025-08-26T21:12:17.637Z",
+    "updatedAt": "2025-08-26T21:12:17.637Z"
+  }
+]

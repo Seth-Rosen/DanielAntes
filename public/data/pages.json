@@ -1,0 +1,18 @@
+[
+  {
+    "id": "home",
+    "title": "Homepage",
+    "slug": "/",
+    "published": true,
+    "data": {
+      "content": {
+        "main": []
+      },
+      "root": {
+        "props": {
+          "title": "Homepage"
+        }
+      }
+    }
+  }
+]

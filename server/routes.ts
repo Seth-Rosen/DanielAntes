@@ -41,6 +41,9 @@ function requireAuth(req: any, res: any, next: any) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Serve static data files
+  app.use('/data', express.static('public/data'));
+  
   // Authentication
   app.post("/api/auth/login", async (req, res) => {
     try {

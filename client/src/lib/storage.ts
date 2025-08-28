@@ -1,4 +1,4 @@
-// Storage abstraction layer for static-first architecture
+// Static file storage implementation for client-side only architecture
 import { Page, Project, Image, SiteSettings } from '@shared/schema';
 
 export interface IStaticStorage {
@@ -26,40 +26,70 @@ export interface IStaticStorage {
   saveSettings(settings: SiteSettings): Promise<void>;
 }
 
-// Local file storage implementation for development
-export class LocalFileStorage implements IStaticStorage {
-  private dataCache: Map<string, any> = new Map();
+// Static file storage - reads from /data/*.json files
+export class StaticFileStorage implements IStaticStorage {
+  private cache: Map<string, any> = new Map();
   
-  private async loadFile<T>(filename: string, defaultValue: T): Promise<T> {
-    if (this.dataCache.has(filename)) {
-      return this.dataCache.get(filename);
+  private async fetchStaticData<T>(filename: string): Promise<T> {
+    // Check cache first
+    if (this.cache.has(filename)) {
+      return this.cache.get(filename);
     }
     
     try {
-      // In development, load from existing data files
-      const response = await fetch(`/api/${filename.replace('.json', '')}`);
-      if (response.ok) {
-        const data = await response.json();
-        this.dataCache.set(filename, data);
-        return data;
+      // Fetch from static files in public directory
+      const response = await fetch(`/data/${filename}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${filename}`);
       }
+      const data = await response.json();
+      this.cache.set(filename, data);
+      return data;
     } catch (error) {
-      console.warn(`Could not load ${filename}, using default:`, error);
+      console.warn(`Could not load ${filename}:`, error);
+      // Return empty defaults based on filename
+      if (filename === 'pages.json') return [] as T;
+      if (filename === 'projects.json') return [] as T;
+      if (filename === 'images.json') return [] as T;
+      if (filename === 'settings.json') return { siteName: 'Daniel Antes', siteDescription: '' } as T;
+      return [] as T;
     }
-    
-    this.dataCache.set(filename, defaultValue);
-    return defaultValue;
   }
   
-  private async saveFile<T>(filename: string, data: T): Promise<void> {
-    this.dataCache.set(filename, data);
-    // In a real static implementation, this would save to the hosting provider
-    console.log(`[LocalFileStorage] Saved ${filename}:`, data);
+  private async saveToLocalStorage<T>(key: string, data: T): Promise<void> {
+    // For admin operations, we'll save to localStorage temporarily
+    // In production, this would trigger a rebuild via Netlify Functions
+    try {
+      localStorage.setItem(`static_data_${key}`, JSON.stringify(data));
+      // Update cache
+      this.cache.set(key, data);
+      console.log(`[StaticFileStorage] Saved ${key}:`, data);
+    } catch (error) {
+      console.error(`Failed to save ${key}:`, error);
+    }
+  }
+  
+  private async getData<T>(filename: string): Promise<T> {
+    // Check localStorage first for admin modifications
+    const localKey = `static_data_${filename}`;
+    const localData = localStorage.getItem(localKey);
+    if (localData) {
+      try {
+        const parsed = JSON.parse(localData);
+        this.cache.set(filename, parsed);
+        return parsed;
+      } catch (error) {
+        console.warn(`Invalid localStorage data for ${filename}`);
+      }
+    }
+    
+    // Fall back to static files
+    return this.fetchStaticData<T>(filename);
   }
   
   // Pages
   async getPages(): Promise<Page[]> {
-    return await this.loadFile('pages.json', []);
+    return await this.getData<Page[]>('pages.json');
   }
   
   async getPage(id: string): Promise<Page | null> {
@@ -86,7 +116,7 @@ export class LocalFileStorage implements IStaticStorage {
           updatedAt: now,
         };
         pages[index] = updatedPage;
-        await this.saveFile('pages.json', pages);
+        await this.saveToLocalStorage('pages.json', pages);
         return updatedPage;
       }
     }
@@ -100,19 +130,19 @@ export class LocalFileStorage implements IStaticStorage {
     };
     
     pages.push(newPage);
-    await this.saveFile('pages.json', pages);
+    await this.saveToLocalStorage('pages.json', pages);
     return newPage;
   }
   
   async deletePage(id: string): Promise<void> {
     const pages = await this.getPages();
     const filteredPages = pages.filter(p => p.id !== id);
-    await this.saveFile('pages.json', filteredPages);
+    await this.saveToLocalStorage('pages.json', filteredPages);
   }
   
   // Projects
   async getProjects(): Promise<Project[]> {
-    return await this.loadFile('projects.json', []);
+    return await this.getData<Project[]>('projects.json');
   }
   
   async getProject(id: string): Promise<Project | null> {
@@ -134,7 +164,7 @@ export class LocalFileStorage implements IStaticStorage {
           updatedAt: now,
         };
         projects[index] = updatedProject;
-        await this.saveFile('projects.json', projects);
+        await this.saveToLocalStorage('projects.json', projects);
         return updatedProject;
       }
     }
@@ -148,19 +178,19 @@ export class LocalFileStorage implements IStaticStorage {
     };
     
     projects.push(newProject);
-    await this.saveFile('projects.json', projects);
+    await this.saveToLocalStorage('projects.json', projects);
     return newProject;
   }
   
   async deleteProject(id: string): Promise<void> {
     const projects = await this.getProjects();
     const filteredProjects = projects.filter(p => p.id !== id);
-    await this.saveFile('projects.json', filteredProjects);
+    await this.saveToLocalStorage('projects.json', filteredProjects);
   }
   
   // Images
   async getImages(): Promise<Image[]> {
-    return await this.loadFile('images.json', []);
+    return await this.getData<Image[]>('images.json');
   }
   
   async getImage(id: string): Promise<Image | null> {
@@ -172,48 +202,47 @@ export class LocalFileStorage implements IStaticStorage {
     const images = await this.getImages();
     const now = new Date().toISOString();
     
+    if (imageData.id) {
+      // Update existing image
+      const index = images.findIndex(i => i.id === imageData.id);
+      if (index !== -1) {
+        const updatedImage: Image = {
+          ...images[index],
+          ...imageData,
+        };
+        images[index] = updatedImage;
+        await this.saveToLocalStorage('images.json', images);
+        return updatedImage;
+      }
+    }
+    
+    // Create new image
     const newImage: Image = {
       ...imageData,
       id: imageData.id || crypto.randomUUID(),
       uploadedAt: now,
     };
     
-    if (imageData.id) {
-      // Update existing
-      const index = images.findIndex(i => i.id === imageData.id);
-      if (index !== -1) {
-        images[index] = newImage;
-      } else {
-        images.push(newImage);
-      }
-    } else {
-      images.push(newImage);
-    }
-    
-    await this.saveFile('images.json', images);
+    images.push(newImage);
+    await this.saveToLocalStorage('images.json', images);
     return newImage;
   }
   
   async deleteImage(id: string): Promise<void> {
     const images = await this.getImages();
     const filteredImages = images.filter(i => i.id !== id);
-    await this.saveFile('images.json', filteredImages);
+    await this.saveToLocalStorage('images.json', filteredImages);
   }
   
   // Settings
   async getSettings(): Promise<SiteSettings> {
-    return await this.loadFile('settings.json', {
-      siteName: "Daniel Antes Portfolio",
-      tagline: "Master Marquetry & Hardwood Flooring Artisan",
-      primaryColor: "hsl(40 50% 65%)",
-      contactInfo: {},
-    });
+    return await this.getData<SiteSettings>('settings.json');
   }
   
   async saveSettings(settings: SiteSettings): Promise<void> {
-    await this.saveFile('settings.json', settings);
+    await this.saveToLocalStorage('settings.json', settings);
   }
 }
 
-// Global storage instance
-export const storage = new LocalFileStorage();
+// Export singleton instance
+export const storage = new StaticFileStorage();
