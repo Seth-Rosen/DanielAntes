@@ -1,4 +1,4 @@
-// Pure static file storage - no localStorage, no API calls
+// Pure static file storage with write capabilities
 import { Page, Project, Image, SiteSettings } from '@shared/schema';
 
 export interface IStaticStorage {
@@ -15,7 +15,7 @@ export interface IStaticStorage {
   
   getSettings(): Promise<SiteSettings>;
   
-  // Write operations for admin (future: GitHub API)
+  // Write operations for admin
   savePage(page: Omit<Page, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Page>;
   deletePage(id: string): Promise<void>;
   
@@ -28,23 +28,21 @@ export interface IStaticStorage {
   saveSettings(settings: SiteSettings): Promise<void>;
 }
 
-export class StaticFileStorage implements IStaticStorage {
-  private cache: Map<string, any> = new Map();
-  
-  private async fetchData<T>(filename: string): Promise<T> {
-    // Clear cache for now to ensure fresh data
-    // if (this.cache.has(filename)) {
-    //   return this.cache.get(filename);
-    // }
-    
+// Storage backend interface - easily swappable
+interface StorageBackend {
+  read<T>(filename: string): Promise<T>;
+  write<T>(filename: string, data: T): Promise<void>;
+}
+
+// Local file storage backend (will switch to GitHub later)
+class LocalFileBackend implements StorageBackend {
+  async read<T>(filename: string): Promise<T> {
     try {
       const response = await fetch(`/data/${filename}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch ${filename}`);
       }
-      const data = await response.json();
-      this.cache.set(filename, data);
-      return data;
+      return await response.json();
     } catch (error) {
       console.warn(`Could not load ${filename}, using defaults`);
       // Return sensible defaults
@@ -56,6 +54,76 @@ export class StaticFileStorage implements IStaticStorage {
       }
       return [] as T;
     }
+  }
+  
+  async write<T>(filename: string, data: T): Promise<void> {
+    // For local development, write to server endpoint
+    // This will be replaced with GitHub API in production
+    try {
+      const response = await fetch('/api/storage/write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename, data })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to write ${filename}`);
+      }
+      
+      console.log(`[LocalStorage] Wrote ${filename}`);
+    } catch (error) {
+      console.error(`Failed to write ${filename}:`, error);
+      throw error;
+    }
+  }
+}
+
+// Future GitHub backend (placeholder for now)
+class GitHubBackend implements StorageBackend {
+  async read<T>(filename: string): Promise<T> {
+    // Will read from GitHub API
+    throw new Error('GitHub backend not implemented yet');
+  }
+  
+  async write<T>(filename: string, data: T): Promise<void> {
+    // Will commit to GitHub using API
+    // const token = process.env.GITHUB_TOKEN;
+    // await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/public/data/${filename}`, {
+    //   method: 'PUT',
+    //   headers: { 
+    //     'Authorization': `token ${token}`,
+    //     'Content-Type': 'application/json'
+    //   },
+    //   body: JSON.stringify({
+    //     message: `Update ${filename}`,
+    //     content: btoa(JSON.stringify(data, null, 2)),
+    //     sha: currentSha // Need to get current file SHA first
+    //   })
+    // });
+    throw new Error('GitHub backend not implemented yet');
+  }
+}
+
+export class StaticFileStorage implements IStaticStorage {
+  private backend: StorageBackend;
+  private cache: Map<string, any> = new Map();
+  
+  constructor() {
+    // Use local backend for now, will switch based on environment later
+    this.backend = new LocalFileBackend();
+  }
+  
+  private async fetchData<T>(filename: string): Promise<T> {
+    // Always fetch fresh for now during development
+    const data = await this.backend.read<T>(filename);
+    this.cache.set(filename, data);
+    return data;
+  }
+  
+  private async saveData<T>(filename: string, data: T): Promise<void> {
+    await this.backend.write(filename, data);
+    // Clear cache to ensure next read gets fresh data
+    this.cache.delete(filename);
   }
   
   // Read operations (for live site)
@@ -95,138 +163,147 @@ export class StaticFileStorage implements IStaticStorage {
     return this.fetchData<SiteSettings>('settings.json');
   }
   
-  // Write operations (for admin - will be GitHub API in Phase 3)
+  // Write operations (for admin)
   async savePage(pageData: Omit<Page, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Page> {
-    // Phase 2: In-memory only for testing
-    // Phase 3: Will use GitHub API to commit changes
     const pages = await this.getPages();
     const now = new Date().toISOString();
+    
+    let updatedPage: Page;
     
     if (pageData.id) {
       const index = pages.findIndex(p => p.id === pageData.id);
       if (index !== -1) {
-        const updatedPage: Page = {
+        updatedPage = {
           ...pages[index],
           ...pageData,
           updatedAt: now,
         };
         pages[index] = updatedPage;
-        // Clear cache so next read gets updated data
-        this.cache.delete('pages.json');
-        this.cache.set('pages.json', pages);
-        console.log('[Admin] Page updated (in-memory only):', updatedPage);
-        return updatedPage;
+      } else {
+        // ID provided but not found, create new
+        updatedPage = {
+          ...pageData,
+          id: pageData.id,
+          createdAt: now,
+          updatedAt: now,
+        } as Page;
+        pages.push(updatedPage);
       }
+    } else {
+      // Create new page
+      updatedPage = {
+        ...pageData,
+        id: crypto.randomUUID(),
+        createdAt: now,
+        updatedAt: now,
+      } as Page;
+      pages.push(updatedPage);
     }
     
-    const newPage: Page = {
-      ...pageData,
-      id: pageData.id || crypto.randomUUID(),
-      createdAt: now,
-      updatedAt: now,
-    };
-    
-    pages.push(newPage);
-    this.cache.delete('pages.json');
-    this.cache.set('pages.json', pages);
-    console.log('[Admin] Page created (in-memory only):', newPage);
-    return newPage;
+    await this.saveData('pages.json', pages);
+    console.log('[Storage] Page saved:', updatedPage.id);
+    return updatedPage;
   }
   
   async deletePage(id: string): Promise<void> {
     const pages = await this.getPages();
     const filteredPages = pages.filter(p => p.id !== id);
-    this.cache.delete('pages.json');
-    this.cache.set('pages.json', filteredPages);
-    console.log('[Admin] Page deleted (in-memory only):', id);
+    await this.saveData('pages.json', filteredPages);
+    console.log('[Storage] Page deleted:', id);
   }
   
   async saveProject(projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Project> {
     const projects = await this.getProjects();
     const now = new Date().toISOString();
     
+    let updatedProject: Project;
+    
     if (projectData.id) {
       const index = projects.findIndex(p => p.id === projectData.id);
       if (index !== -1) {
-        const updatedProject: Project = {
+        updatedProject = {
           ...projects[index],
           ...projectData,
           updatedAt: now,
         };
         projects[index] = updatedProject;
-        this.cache.delete('projects.json');
-        this.cache.set('projects.json', projects);
-        console.log('[Admin] Project updated (in-memory only):', updatedProject);
-        return updatedProject;
+      } else {
+        updatedProject = {
+          ...projectData,
+          id: projectData.id,
+          createdAt: now,
+          updatedAt: now,
+        } as Project;
+        projects.push(updatedProject);
       }
+    } else {
+      updatedProject = {
+        ...projectData,
+        id: crypto.randomUUID(),
+        createdAt: now,
+        updatedAt: now,
+      } as Project;
+      projects.push(updatedProject);
     }
     
-    const newProject: Project = {
-      ...projectData,
-      id: projectData.id || crypto.randomUUID(),
-      createdAt: now,
-      updatedAt: now,
-    };
-    
-    projects.push(newProject);
-    this.cache.delete('projects.json');
-    this.cache.set('projects.json', projects);
-    console.log('[Admin] Project created (in-memory only):', newProject);
-    return newProject;
+    await this.saveData('projects.json', projects);
+    console.log('[Storage] Project saved:', updatedProject.id);
+    return updatedProject;
   }
   
   async deleteProject(id: string): Promise<void> {
     const projects = await this.getProjects();
     const filteredProjects = projects.filter(p => p.id !== id);
-    this.cache.delete('projects.json');
-    this.cache.set('projects.json', filteredProjects);
-    console.log('[Admin] Project deleted (in-memory only):', id);
+    await this.saveData('projects.json', filteredProjects);
+    console.log('[Storage] Project deleted:', id);
   }
   
   async saveImage(imageData: Omit<Image, 'id' | 'uploadedAt'> & { id?: string }): Promise<Image> {
     const images = await this.getImages();
     const now = new Date().toISOString();
     
+    let updatedImage: Image;
+    
     if (imageData.id) {
       const index = images.findIndex(i => i.id === imageData.id);
       if (index !== -1) {
-        const updatedImage: Image = {
+        updatedImage = {
           ...images[index],
           ...imageData,
         };
         images[index] = updatedImage;
-        this.cache.delete('images.json');
-        this.cache.set('images.json', images);
-        console.log('[Admin] Image updated (in-memory only):', updatedImage);
-        return updatedImage;
+      } else {
+        updatedImage = {
+          ...imageData,
+          id: imageData.id,
+          uploadedAt: now,
+        } as Image;
+        images.push(updatedImage);
       }
+    } else {
+      updatedImage = {
+        ...imageData,
+        id: crypto.randomUUID(),
+        uploadedAt: now,
+      } as Image;
+      images.push(updatedImage);
     }
     
-    const newImage: Image = {
-      ...imageData,
-      id: imageData.id || crypto.randomUUID(),
-      uploadedAt: now,
-    };
-    
-    images.push(newImage);
-    this.cache.delete('images.json');
-    this.cache.set('images.json', images);
-    console.log('[Admin] Image created (in-memory only):', newImage);
-    return newImage;
+    await this.saveData('images.json', images);
+    console.log('[Storage] Image saved:', updatedImage.id);
+    return updatedImage;
   }
   
   async deleteImage(id: string): Promise<void> {
     const images = await this.getImages();
     const filteredImages = images.filter(i => i.id !== id);
-    this.cache.delete('images.json');
-    this.cache.set('images.json', filteredImages);
-    console.log('[Admin] Image deleted (in-memory only):', id);
+    await this.saveData('images.json', filteredImages);
+    console.log('[Storage] Image deleted:', id);
   }
   
   async saveSettings(settings: SiteSettings): Promise<void> {
-    this.cache.delete('settings.json');
-    this.cache.set('settings.json', settings);
-    console.log('[Admin] Settings updated (in-memory only):', settings);
+    await this.saveData('settings.json', settings);
+    console.log('[Storage] Settings saved');
   }
 }
 

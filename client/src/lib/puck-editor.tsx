@@ -9,10 +9,7 @@ interface PuckEditorProps {
 }
 
 export function PuckEditor({ data, onSave, isLoading }: PuckEditorProps) {
-  console.log('PuckEditor received data:', data);
-  
   const handleSave = (data: any) => {
-    console.log('Saving data:', data);
     onSave(data);
   };
   
@@ -47,8 +44,6 @@ export function PuckEditor({ data, onSave, isLoading }: PuckEditorProps) {
     };
   }
   
-  console.log('Using safeData:', safeData);
-
   return (
     <div className="h-full puck-root" data-testid="puck-editor">
       <Puck

@@ -32,10 +32,6 @@ export default function Builder() {
           const page = await storage.getPage(pageId);
           if (page) {
             // Ensure page data is properly structured for Puck
-            console.log('Page loaded:', page);
-            console.log('Page data type:', typeof page.data);
-            console.log('Page data value:', page.data);
-            
             let puckData;
             if (page.data && typeof page.data === 'object') {
               // Check if data has the correct structure
@@ -49,8 +45,6 @@ export default function Builder() {
               puckData = { content: { main: [] }, root: { props: { title: page.title } } };
             }
             
-            console.log('Final puckData:', puckData);
-              
             setPageData({
               title: page.title,
               slug: page.slug,
@@ -117,14 +111,11 @@ export default function Builder() {
     try {
       await savePage(data, true);
       setPageData(prev => ({ ...prev, published: true }));
-    } catch (error) {
-      // Error already handled in savePage
-    }
-  };
-
-  const handleSave = async (data: any) => {
-    try {
-      await savePage(data, false);
+      
+      // Reload the page to confirm save worked
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (error) {
       // Error already handled in savePage
     }
