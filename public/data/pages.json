@@ -79,6 +79,41 @@
     }
   },
   {
+    "title": "test",
+    "slug": "test",
+    "data": {
+      "root": {
+        "props": {
+          "title": "New Page"
+        }
+      },
+      "content": [],
+      "zones": {
+        "root:main": [
+          {
+            "type": "HeroSection",
+            "props": {
+              "title": "Master Artisan\nMarquetry & Flooring",
+              "subtitle": "Crafting bespoke hardwood floors and intricate marquetry with three decades of artistic excellence",
+              "ctaPrimary": "View Portfolio",
+              "ctaSecondary": "Get In Touch",
+              "id": "HeroSection-d193295f-ac55-481b-9282-34bfdae7127e"
+            }
+          }
+        ]
+      }
+    },
+    "published": true,
+    "showInNav": true,
+    "order": 0,
+    "seo": {
+      "description": ""
+    },
+    "id": "a41f580c-4d4b-4df6-afd0-8d65ec35ac59",
+    "createdAt": "2025-09-04T23:45:23.083Z",
+    "updatedAt": "2025-09-04T23:45:23.083Z"
+  },
+  {
     "title": "my-story",
     "slug": "my-story",
     "data": {
