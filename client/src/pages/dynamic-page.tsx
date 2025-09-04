@@ -29,8 +29,14 @@ export default function DynamicPage() {
           setIsLoading(true);
           setError(null);
         }
+        // Debug: log requested slug and available pages
+        const all = await storage.getPages();
+        console.debug('[DynamicPage] requested slug:', slug, 'available:', all.map(p => p.slug));
         // Try to find page by slug
-        const foundPage = await storage.getPageBySlug(slug);
+        const foundPage = all.find(p => {
+          const norm = (s: string) => (s === '/' ? '/' : (s || '').replace(/^\/+|\/+$/g, '').toLowerCase());
+          return norm(p.slug) === norm(slug);
+        }) || null;
         if (mounted) {
           if (foundPage && (foundPage.published ?? true)) {
             setPage(foundPage);
