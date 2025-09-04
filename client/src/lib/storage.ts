@@ -71,6 +71,9 @@ class LocalFileBackend implements StorageBackend {
       }
       
       console.log(`[LocalStorage] Wrote ${filename}`);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('storage:update', { detail: { filename } }));
+      }
     } catch (error) {
       console.error(`Failed to write ${filename}:`, error);
       throw error;
