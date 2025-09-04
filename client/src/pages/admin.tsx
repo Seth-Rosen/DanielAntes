@@ -394,50 +394,56 @@ export default function Admin() {
                     <div
                       key={project.id}
                       className="flex items-center justify-between p-3 border rounded-lg"
-                      draggable
-                      onDragStart={() => setDragProjectIndex(index)}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={() => handleProjectDrop(index)}
+                      onDragEnd={() => setDragProjectIndex(null)}
                     >
-                      <div className="flex-1">
-                        {editingProjectId === project.id ? (
-                          <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-4">
+                      <div className="flex items-center gap-3 flex-1">
+                        <span
+                          className="cursor-grab select-none text-muted-foreground"
+                          draggable
+                          onDragStart={() => setDragProjectIndex(index)}
+                        >⋮⋮</span>
+                        <div className="flex-1">
+                          {editingProjectId === project.id ? (
+                            <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-4">
+                              <div>
+                                <Label htmlFor={`edit-title-${project.id}`}>Title</Label>
+                                <Input
+                                  id={`edit-title-${project.id}`}
+                                  value={editProjectForm.title}
+                                  onChange={(e) => setEditProjectForm({ ...editProjectForm, title: e.target.value })}
+                                />
+                              </div>
+                              <div className="md:col-span-2">
+                                <Label htmlFor={`edit-description-${project.id}`}>Description</Label>
+                                <Textarea
+                                  id={`edit-description-${project.id}`}
+                                  value={editProjectForm.description}
+                                  onChange={(e) => setEditProjectForm({ ...editProjectForm, description: e.target.value })}
+                                />
+                              </div>
+                              <div className="md:col-span-3">
+                                <Label htmlFor={`edit-tags-${project.id}`}>Tags (comma-separated)</Label>
+                                <Input
+                                  id={`edit-tags-${project.id}`}
+                                  value={editProjectForm.tags}
+                                  onChange={(e) => setEditProjectForm({ ...editProjectForm, tags: e.target.value })}
+                                  placeholder="parquet, medallion, mandala"
+                                />
+                              </div>
+                            </div>
+                          ) : (
                             <div>
-                              <Label htmlFor={`edit-title-${project.id}`}>Title</Label>
-                              <Input
-                                id={`edit-title-${project.id}`}
-                                value={editProjectForm.title}
-                                onChange={(e) => setEditProjectForm({ ...editProjectForm, title: e.target.value })}
-                              />
+                              <p className="font-medium">{project.title}</p>
+                              {project.description && (
+                                <p className="text-sm text-muted-foreground line-clamp-1">
+                                  {project.description}
+                                </p>
+                              )}
                             </div>
-                            <div className="md:col-span-2">
-                              <Label htmlFor={`edit-description-${project.id}`}>Description</Label>
-                              <Textarea
-                                id={`edit-description-${project.id}`}
-                                value={editProjectForm.description}
-                                onChange={(e) => setEditProjectForm({ ...editProjectForm, description: e.target.value })}
-                              />
-                            </div>
-                            <div className="md:col-span-3">
-                              <Label htmlFor={`edit-tags-${project.id}`}>Tags (comma-separated)</Label>
-                              <Input
-                                id={`edit-tags-${project.id}`}
-                                value={editProjectForm.tags}
-                                onChange={(e) => setEditProjectForm({ ...editProjectForm, tags: e.target.value })}
-                                placeholder="parquet, medallion, mandala"
-                              />
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <p className="font-medium">{project.title}</p>
-                            {project.description && (
-                              <p className="text-sm text-muted-foreground line-clamp-1">
-                                {project.description}
-                              </p>
-                            )}
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 ml-4">
                         {editingProjectId === project.id ? (
