@@ -14,8 +14,9 @@ export function Navigation() {
       try {
         const allPages = await storage.getPages();
         // Filter for published pages that should show in nav
+        // Exclude homepage (slug "/") to avoid duplicate with hardcoded Home link
         const navPages = allPages
-          .filter(p => p.published && p.showInNav)
+          .filter(p => p.published && p.showInNav && p.slug !== "/")
           .sort((a, b) => (a.order || 0) - (b.order || 0));
         setPages(navPages);
       } catch (error) {
@@ -66,8 +67,8 @@ export function Navigation() {
 
               {/* Dynamic pages from storage */}
               {!isLoading && pages.map((page) => {
-                const pageHref = `/${page.slug}`;
-                
+                const pageHref = page.slug.startsWith("/") ? page.slug : `/${page.slug}`;
+
                 return (
                   <div key={page.id}>
                     {page.slug.startsWith("#") ? (
