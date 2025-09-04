@@ -79,7 +79,8 @@ export function Navigation() {
 
               {/* Dynamic pages from storage */}
               {!isLoading && pages.map((page) => {
-                const pageHref = page.slug.startsWith("/") ? page.slug : `/${page.slug}`;
+                const clean = page.slug === "/" ? "/" : page.slug.replace(/^\/+|\/+$/g, "");
+                const pageHref = clean === "/" ? "/" : `/${clean}`;
 
                 return (
                   <div key={page.id}>
