@@ -98,17 +98,24 @@ export default function Builder() {
       };
       
       const savedPage = await storage.savePage(saveData);
-      
-      toast({ 
+
+      toast({
         title: "Page saved!",
         description: pageData.published ? `Page is live at /${savedPage.slug}` : "Page saved as unpublished"
       });
-      
+
       // If it was a new page, navigate to the edit URL
       if (!pageId) {
         setLocation(`/builder/${savedPage.id}`);
       }
-      
+
+      // Also navigate to the live page when published to verify routing
+      if (savedPage.published) {
+        const href = savedPage.slug.startsWith('/') ? savedPage.slug : `/${savedPage.slug}`;
+        // slight delay to ensure write completes and client refetches
+        setTimeout(() => setLocation(href), 50);
+      }
+
       return savedPage;
     } catch (error) {
       console.error('Failed to save page:', error);
