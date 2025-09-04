@@ -14,7 +14,7 @@ export default function DynamicPage() {
     if (decoded === "/") return "/";
     return decoded.replace(/^\/+|\/+$/g, "");
   };
-  const slug = normalize(location);
+  const slug = normalize(location === "/" ? "/" : (location || "").replace(/^\/+/, ""));
 
   const [page, setPage] = useState<Page | null>(null);
   const [isLoading, setIsLoading] = useState(true);
