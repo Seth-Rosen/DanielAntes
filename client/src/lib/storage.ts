@@ -38,7 +38,7 @@ interface StorageBackend {
 class LocalFileBackend implements StorageBackend {
   async read<T>(filename: string): Promise<T> {
     try {
-      const response = await fetch(`/data/${filename}`);
+      const response = await fetch(`/data/${filename}?t=${Date.now()}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch ${filename}`);
       }
