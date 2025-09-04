@@ -247,6 +247,12 @@ export class StaticFileStorage implements IStaticStorage {
     console.log('[Storage] Page deleted:', id);
   }
   
+  async reorderProjects(projectsInOrder: Project[]): Promise<Project[]> {
+    const normalized = projectsInOrder.map((p, idx) => ({ ...p, order: idx }));
+    await this.saveData('projects.json', normalized);
+    return normalized;
+  }
+
   async saveProject(projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Project> {
     const projects = await this.fetchData<Project[]>('projects.json');
     const now = new Date().toISOString();
