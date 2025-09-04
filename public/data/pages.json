@@ -132,5 +132,60 @@
     "id": "9dff1578-aab2-4739-a8fe-085669b82fab",
     "createdAt": "2025-09-04T19:54:49.469Z",
     "updatedAt": "2025-09-04T20:19:17.278Z"
+  },
+  {
+    "title": "New Page",
+    "slug": "/new-page11",
+    "data": {
+      "root": {
+        "props": {
+          "title": "New Page"
+        }
+      },
+      "content": [],
+      "zones": {
+        "root:main": [
+          {
+            "type": "HeroSection",
+            "props": {
+              "title": "Master Artisan\nMarquetry & Flooring",
+              "subtitle": "Crafting bespoke hardwood floors and intricate marquetry with three decades of artistic excellence",
+              "ctaPrimary": "View Portfolio",
+              "ctaSecondary": "Get In Touch",
+              "id": "HeroSection-884eaf5d-ad36-42d3-ab46-c6cef5d21638"
+            }
+          },
+          {
+            "type": "PortfolioSection",
+            "props": {
+              "title": "Portfolio",
+              "subtitle": "Explore our complete collection of bespoke marquetry and hardwood flooring projects",
+              "showFilters": true,
+              "availableTags": [
+                {
+                  "value": "parquet"
+                },
+                {
+                  "value": "medallion"
+                },
+                {
+                  "value": "mandala"
+                }
+              ],
+              "id": "PortfolioSection-31529a3e-5ed3-4e7e-b733-850972d16d5b"
+            }
+          }
+        ]
+      }
+    },
+    "published": true,
+    "showInNav": true,
+    "order": 2,
+    "seo": {
+      "description": ""
+    },
+    "id": "5ee370f0-4751-4a78-9093-43dde5e9d818",
+    "createdAt": "2025-09-04T20:43:59.374Z",
+    "updatedAt": "2025-09-04T20:43:59.374Z"
   }
 ]
