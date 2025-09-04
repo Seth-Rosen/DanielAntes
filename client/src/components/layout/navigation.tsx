@@ -10,22 +10,34 @@ export function Navigation() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
     async function loadPages() {
       try {
         const allPages = await storage.getPages();
-        // Filter for published pages that should show in nav
-        // Exclude homepage (slug "/") to avoid duplicate with hardcoded Home link
         const navPages = allPages
           .filter(p => p.published && p.showInNav && p.slug !== "/")
           .sort((a, b) => (a.order || 0) - (b.order || 0));
-        setPages(navPages);
+        if (mounted) setPages(navPages);
       } catch (error) {
         console.error('Failed to load navigation pages:', error);
       } finally {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     }
     loadPages();
+
+    const onUpdate = (e: any) => {
+      if (e?.detail?.filename === 'pages.json') loadPages();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage:update', onUpdate);
+    }
+    return () => {
+      mounted = false;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage:update', onUpdate);
+      }
+    };
   }, []);
 
   const handleNavClick = (href: string) => {
