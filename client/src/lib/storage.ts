@@ -128,7 +128,8 @@ export class StaticFileStorage implements IStaticStorage {
   
   // Read operations (for live site)
   async getPages(): Promise<Page[]> {
-    return this.fetchData<Page[]>('pages.json');
+    const list = await this.fetchData<Page[]>('pages.json');
+    return list.sort((a, b) => (a.order || 0) - (b.order || 0));
   }
   
   async getPage(id: string): Promise<Page | null> {
@@ -142,7 +143,8 @@ export class StaticFileStorage implements IStaticStorage {
   }
   
   async getProjects(): Promise<Project[]> {
-    return this.fetchData<Project[]>('projects.json');
+    const list = await this.fetchData<Project[]>('projects.json');
+    return list.sort((a, b) => (a.order || 0) - (b.order || 0));
   }
   
   async getProject(id: string): Promise<Project | null> {
@@ -167,23 +169,33 @@ export class StaticFileStorage implements IStaticStorage {
   async savePage(pageData: Omit<Page, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Page> {
     const pages = await this.getPages();
     const now = new Date().toISOString();
-    
+
+    // Normalize slug: homepage is '/', others have no leading '/'
+    let normalizedSlug = pageData.slug?.trim() || '';
+    if (normalizedSlug === '' || normalizedSlug === '/' || normalizedSlug === '#') {
+      normalizedSlug = '/';
+    } else {
+      normalizedSlug = normalizedSlug.replace(/^\/+/, '');
+    }
+
+    const baseData = { ...pageData, slug: normalizedSlug } as typeof pageData;
+
     let updatedPage: Page;
-    
-    if (pageData.id) {
-      const index = pages.findIndex(p => p.id === pageData.id);
+
+    if (baseData.id) {
+      const index = pages.findIndex(p => p.id === baseData.id);
       if (index !== -1) {
         updatedPage = {
           ...pages[index],
-          ...pageData,
+          ...baseData,
           updatedAt: now,
         };
         pages[index] = updatedPage;
       } else {
         // ID provided but not found, create new
         updatedPage = {
-          ...pageData,
-          id: pageData.id,
+          ...baseData,
+          id: baseData.id,
           createdAt: now,
           updatedAt: now,
         } as Page;
@@ -192,15 +204,20 @@ export class StaticFileStorage implements IStaticStorage {
     } else {
       // Create new page
       updatedPage = {
-        ...pageData,
+        ...baseData,
         id: crypto.randomUUID(),
         createdAt: now,
         updatedAt: now,
       } as Page;
       pages.push(updatedPage);
     }
-    
-    await this.saveData('pages.json', pages);
+
+    // Ensure deterministic order values
+    const normalizedPages = pages
+      .map((p, idx) => ({ ...p, order: typeof p.order === 'number' ? p.order : idx }))
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    await this.saveData('pages.json', normalizedPages);
     console.log('[Storage] Page saved:', updatedPage.id);
     return updatedPage;
   }
@@ -213,11 +230,11 @@ export class StaticFileStorage implements IStaticStorage {
   }
   
   async saveProject(projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Project> {
-    const projects = await this.getProjects();
+    const projects = await this.fetchData<Project[]>('projects.json');
     const now = new Date().toISOString();
-    
+
     let updatedProject: Project;
-    
+
     if (projectData.id) {
       const index = projects.findIndex(p => p.id === projectData.id);
       if (index !== -1) {
@@ -245,8 +262,12 @@ export class StaticFileStorage implements IStaticStorage {
       } as Project;
       projects.push(updatedProject);
     }
-    
-    await this.saveData('projects.json', projects);
+
+    const normalized = projects
+      .map((p, idx) => ({ ...p, order: typeof p.order === 'number' ? p.order : idx }))
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    await this.saveData('projects.json', normalized);
     console.log('[Storage] Project saved:', updatedProject.id);
     return updatedProject;
   }
