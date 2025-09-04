@@ -32,7 +32,7 @@ export default function DynamicPage() {
         // Try to find page by slug
         const foundPage = await storage.getPageBySlug(slug);
         if (mounted) {
-          if (foundPage && foundPage.published) {
+          if (foundPage && (foundPage.published ?? true)) {
             setPage(foundPage);
           } else {
             setPage(null);
