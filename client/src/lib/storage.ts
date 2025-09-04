@@ -178,6 +178,12 @@ export class StaticFileStorage implements IStaticStorage {
   }
   
   // Write operations (for admin)
+  async reorderPages(pagesInOrder: Page[]): Promise<Page[]> {
+    const normalized = pagesInOrder.map((p, idx) => ({ ...p, order: idx }));
+    await this.saveData('pages.json', normalized);
+    return normalized;
+  }
+
   async savePage(pageData: Omit<Page, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Page> {
     const pages = await this.getPages();
     const now = new Date().toISOString();
