@@ -166,17 +166,26 @@ export const ProjectsCarousel = ({ title, subtitle, featured }: {
   const [projectsLoading, setProjectsLoading] = useState(true);
   
   useEffect(() => {
+    let mounted = true;
     async function loadProjects() {
       try {
         const projectsData = await storage.getProjects();
-        setProjects(projectsData);
+        if (mounted) setProjects(projectsData);
       } catch (error) {
         console.error('Failed to load projects:', error);
       } finally {
-        setProjectsLoading(false);
+        if (mounted) setProjectsLoading(false);
       }
     }
     loadProjects();
+    const onUpdate = (e: any) => {
+      if (e?.detail?.filename === 'projects.json') {
+        setProjectsLoading(true);
+        loadProjects();
+      }
+    };
+    if (typeof window !== 'undefined') window.addEventListener('storage:update', onUpdate);
+    return () => { mounted = false; if (typeof window !== 'undefined') window.removeEventListener('storage:update', onUpdate); };
   }, []);
 
   const displayProjects = (featured ? projects.filter((project: any) => project.featured) : projects)
@@ -249,22 +258,36 @@ export const PortfolioSection = ({ title, subtitle, showFilters, availableTags }
   const [imagesLoading, setImagesLoading] = useState(true);
   
   useEffect(() => {
+    let mounted = true;
     async function loadData() {
       try {
         const [projectsData, imagesData] = await Promise.all([
           storage.getProjects(),
           storage.getImages()
         ]);
-        setProjects(projectsData);
-        setAllImages(imagesData);
+        if (mounted) {
+          setProjects(projectsData);
+          setAllImages(imagesData);
+        }
       } catch (error) {
         console.error('Failed to load portfolio data:', error);
       } finally {
-        setProjectsLoading(false);
-        setImagesLoading(false);
+        if (mounted) {
+          setProjectsLoading(false);
+          setImagesLoading(false);
+        }
       }
     }
     loadData();
+    const onUpdate = (e: any) => {
+      if (e?.detail?.filename === 'projects.json' || e?.detail?.filename === 'images.json') {
+        setProjectsLoading(true);
+        setImagesLoading(true);
+        loadData();
+      }
+    };
+    if (typeof window !== 'undefined') window.addEventListener('storage:update', onUpdate);
+    return () => { mounted = false; if (typeof window !== 'undefined') window.removeEventListener('storage:update', onUpdate); };
   }, []);
 
   // Filter projects based on selected tag
