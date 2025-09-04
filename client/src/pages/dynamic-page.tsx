@@ -8,8 +8,15 @@ import { Page } from "@shared/schema";
 
 export default function DynamicPage() {
   const params = useParams();
-  const slug = params.rest || "";
-  
+  const raw = params.rest || "";
+  const normalize = (s: string) => {
+    if (!s) return s;
+    const decoded = decodeURIComponent(s);
+    if (decoded === "/") return "/";
+    return decoded.replace(/^\/+/, "").replace(/\/+$/, "");
+  };
+  const slug = normalize(raw);
+
   const [page, setPage] = useState<Page | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
