@@ -146,13 +146,30 @@ export class StaticFileStorage implements IStaticStorage {
     const pages = await this.getPages();
     const normalize = (s: string) => {
       if (!s) return s;
-      if (s === '/') return '/';
-      return s.replace(/^\/+|\/+$/g, '');
+      const decoded = decodeURIComponent(s);
+      if (decoded === '/' || decoded === '') return '/';
+      return decoded.replace(/^\/+|\/+$/g, '').toLowerCase();
     };
+    const slugify = (s: string) =>
+      (s || '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-/]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^\/+|\/+$/g, '');
+
     const target = normalize(slug);
-    return (
-      pages.find(p => normalize(p.slug) === target) || null
-    );
+
+    // 1) Direct slug match
+    let found = pages.find(p => normalize(p.slug) === target) || null;
+
+    // 2) Fallback: match on slugified title (helps when slug field is missing/mismatched)
+    if (!found) {
+      found = pages.find(p => slugify(p.title) === target) || null;
+    }
+
+    return found || null;
   }
   
   async getProjects(): Promise<Project[]> {
