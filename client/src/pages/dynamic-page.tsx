@@ -29,36 +29,29 @@ export default function DynamicPage() {
           setIsLoading(true);
           setError(null);
         }
-        // Debug: log requested slug and available pages
-        let all = await storage.getPages();
-        console.debug('[DynamicPage] requested slug:', slug, 'available:', all.map(p => p.slug));
-        const norm = (s: string) => (s === '/' ? '/' : (s || '').replace(/^\/+|\/+$/g, '').toLowerCase());
-        // Try to find page by slug
-        let foundPage = all.find(p => norm(p.slug) === norm(slug)) || null;
-        // Fallback: bypass any caching and read raw JSON
-        if (!foundPage) {
+        // Primary: resolve via storage helper (case-insensitive, trims slashes, title fallback)
+        let found = await storage.getPageBySlug(slug);
+
+        // Secondary: bypass any caching and read raw JSON, then resolve again
+        if (!found) {
           try {
             const r = await fetch(`/data/pages.json?t=${Date.now()}`);
             if (r.ok) {
-              all = await r.json();
-              console.debug('[DynamicPage:fallback] available:', all.map((p: any) => p.slug));
-              foundPage = (all as any[]).find((p: any) => norm(p.slug) === norm(slug)) || null;
+              const all = await r.json();
+              const norm = (s: string) => (s === '/' ? '/' : (s || '').replace(/^\/+|\/+$/g, '').toLowerCase());
+              const slugify = (s: string) => (s || '').toLowerCase().trim().replace(/[^a-z0-9\s-/]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^\/+|\/+$/g, '');
+              const target = norm(slug);
+              found = (all as any[]).find((p: any) => norm(p.slug) === target || slugify(p.title) === target) || null;
             }
           } catch {}
         }
+
         if (mounted) {
-          if (foundPage && (foundPage.published ?? true)) {
-            setPage(foundPage);
+          if (found && (found.published ?? true)) {
+            setPage(found);
           } else {
-            const home = all.find(p => norm(p.slug) === '/');
-            if (home) {
-              console.debug('[DynamicPage] falling back to homepage');
-              setPage(home);
-              setError(null);
-            } else {
-              setPage(null);
-              setError("Page not found");
-            }
+            setPage(null);
+            setError('Page not found');
           }
         }
       } catch (err) {
