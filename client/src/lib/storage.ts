@@ -146,7 +146,8 @@ export class StaticFileStorage implements IStaticStorage {
     const pages = await this.getPages();
     const normalize = (s: string) => {
       if (!s) return s;
-      return s === '/' ? '/' : s.replace(/^\/+/, '');
+      if (s === '/') return '/';
+      return s.replace(/^\/+|\/+$/g, '');
     };
     const target = normalize(slug);
     return (
