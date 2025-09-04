@@ -15,7 +15,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/admin" component={Admin} />
       <Route path="/builder/:pageId?" component={Builder} />
-      <Route path="/(.*)" component={DynamicPage} />
+      <Route path="/:rest*" component={DynamicPage} />
       <Route component={NotFound} />
     </Switch>
   );
