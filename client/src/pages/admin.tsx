@@ -181,20 +181,8 @@ export default function Admin() {
 
   const persistPageOrder = async (newPages: Page[]) => {
     try {
-      // Assign sequential order and persist
-      const updated = await Promise.all(
-        newPages.map((p, idx) => storage.savePage({
-          id: p.id,
-          title: p.title,
-          slug: p.slug,
-          data: p.data,
-          published: p.published,
-          showInNav: (p as any).showInNav ?? true,
-          order: idx,
-          seo: (p as any).seo ?? { description: "" },
-        }))
-      );
-      setPages(updated.sort((a, b) => (a.order || 0) - (b.order || 0)));
+      const updated = await storage.reorderPages(newPages);
+      setPages(updated);
       toast({ title: "Navigation order updated" });
     } catch (e) {
       console.error('Failed to persist page order', e);
@@ -211,18 +199,8 @@ export default function Admin() {
 
   const persistProjectOrder = async (newProjects: Project[]) => {
     try {
-      const updated = await Promise.all(
-        newProjects.map((p, idx) => storage.saveProject({
-          id: p.id,
-          title: p.title,
-          description: p.description,
-          images: p.images,
-          tags: p.tags,
-          featured: p.featured,
-          order: idx,
-        }))
-      );
-      setProjects(updated.sort((a, b) => (a.order || 0) - (b.order || 0)));
+      const updated = await storage.reorderProjects(newProjects);
+      setProjects(updated);
       toast({ title: "Projects order updated" });
     } catch (e) {
       console.error('Failed to persist project order', e);
