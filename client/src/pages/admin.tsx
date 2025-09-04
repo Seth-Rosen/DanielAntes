@@ -29,6 +29,12 @@ export default function Admin() {
   const [images, setImages] = useState<Image[]>([]);
   const [pages, setPages] = useState<Page[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  // Drag-and-drop state
+  const [dragPageIndex, setDragPageIndex] = useState<number | null>(null);
+  const [dragProjectIndex, setDragProjectIndex] = useState<number | null>(null);
+  // Project editing state
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editProjectForm, setEditProjectForm] = useState<{ title: string; description: string; tags: string }>({ title: "", description: "", tags: "" });
 
   // Load data on mount
   useEffect(() => {
@@ -165,6 +171,108 @@ export default function Admin() {
     }
   };
 
+  // Reorder utilities
+  const reorder = <T,>(list: T[], startIndex: number, endIndex: number) => {
+    const result = list.slice();
+    const [removed] = result.splice(startIndex, 1);
+    result.splice(endIndex, 0, removed as T);
+    return result;
+  };
+
+  const persistPageOrder = async (newPages: Page[]) => {
+    try {
+      // Assign sequential order and persist
+      const updated = await Promise.all(
+        newPages.map((p, idx) => storage.savePage({
+          id: p.id,
+          title: p.title,
+          slug: p.slug,
+          data: p.data,
+          published: p.published,
+          showInNav: (p as any).showInNav ?? true,
+          order: idx,
+          seo: (p as any).seo ?? { description: "" },
+        }))
+      );
+      setPages(updated.sort((a, b) => (a.order || 0) - (b.order || 0)));
+      toast({ title: "Navigation order updated" });
+    } catch (e) {
+      console.error('Failed to persist page order', e);
+      toast({ title: "Failed to save order", variant: "destructive" });
+    }
+  };
+
+  const handlePageDrop = async (targetIndex: number) => {
+    if (dragPageIndex === null) return;
+    const newOrder = reorder(pages, dragPageIndex, targetIndex);
+    setDragPageIndex(null);
+    await persistPageOrder(newOrder);
+  };
+
+  const persistProjectOrder = async (newProjects: Project[]) => {
+    try {
+      const updated = await Promise.all(
+        newProjects.map((p, idx) => storage.saveProject({
+          id: p.id,
+          title: p.title,
+          description: p.description,
+          images: p.images,
+          tags: p.tags,
+          featured: p.featured,
+          order: idx,
+        }))
+      );
+      setProjects(updated.sort((a, b) => (a.order || 0) - (b.order || 0)));
+      toast({ title: "Projects order updated" });
+    } catch (e) {
+      console.error('Failed to persist project order', e);
+      toast({ title: "Failed to save order", variant: "destructive" });
+    }
+  };
+
+  const handleProjectDrop = async (targetIndex: number) => {
+    if (dragProjectIndex === null) return;
+    const newOrder = reorder(projects, dragProjectIndex, targetIndex);
+    setDragProjectIndex(null);
+    await persistProjectOrder(newOrder);
+  };
+
+  const startEditProject = (p: Project) => {
+    setEditingProjectId(p.id);
+    setEditProjectForm({
+      title: p.title,
+      description: p.description || "",
+      tags: (p.tags || []).join(", "),
+    });
+  };
+
+  const saveEditProject = async (projectId: string) => {
+    try {
+      const existing = projects.find(p => p.id === projectId);
+      if (!existing) return;
+      const tags = editProjectForm.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const updated = await storage.saveProject({
+        id: projectId,
+        title: editProjectForm.title,
+        description: editProjectForm.description,
+        images: existing.images,
+        tags,
+        featured: existing.featured,
+        order: existing.order || 0,
+      });
+      setProjects(projects.map(p => p.id === projectId ? updated : p));
+      setEditingProjectId(null);
+      toast({ title: "Project updated" });
+    } catch (e) {
+      console.error('Failed to update project', e);
+      toast({ title: "Failed to update project", variant: "destructive" });
+    }
+  };
+
+  const cancelEditProject = () => {
+    setEditingProjectId(null);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background text-foreground">
@@ -209,19 +317,26 @@ export default function Admin() {
                 </Button>
                 
                 <div className="space-y-2">
-                  {pages.map((page) => (
-                    <div 
-                      key={page.id} 
+                  {pages.map((page, index) => (
+                    <div
+                      key={page.id}
                       className="flex items-center justify-between p-3 border rounded-lg"
+                      draggable
+                      onDragStart={() => setDragPageIndex(index)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => handlePageDrop(index)}
                     >
-                      <div>
-                        <p className="font-medium">{page.title}</p>
-                        <p className="text-sm text-muted-foreground">{page.slug}</p>
-                        {page.published && (
-                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                            Published
-                          </span>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <span className="cursor-grab select-none text-muted-foreground">⋮⋮</span>
+                        <div>
+                          <p className="font-medium">{page.title}</p>
+                          <p className="text-sm text-muted-foreground">{page.slug}</p>
+                          {page.published && (
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                              Published
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex gap-2">
                         <Button
@@ -243,7 +358,7 @@ export default function Admin() {
                       </div>
                     </div>
                   ))}
-                  
+
                   {pages.length === 0 && (
                     <p className="text-muted-foreground text-center py-4">
                       No pages yet. Create your first page!
@@ -297,30 +412,78 @@ export default function Admin() {
                 </form>
                 
                 <div className="space-y-2">
-                  {projects.map((project) => (
-                    <div 
-                      key={project.id} 
+                  {projects.map((project, index) => (
+                    <div
+                      key={project.id}
                       className="flex items-center justify-between p-3 border rounded-lg"
+                      draggable
+                      onDragStart={() => setDragProjectIndex(index)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => handleProjectDrop(index)}
                     >
-                      <div>
-                        <p className="font-medium">{project.title}</p>
-                        {project.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {project.description}
-                          </p>
+                      <div className="flex-1">
+                        {editingProjectId === project.id ? (
+                          <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-4">
+                            <div>
+                              <Label htmlFor={`edit-title-${project.id}`}>Title</Label>
+                              <Input
+                                id={`edit-title-${project.id}`}
+                                value={editProjectForm.title}
+                                onChange={(e) => setEditProjectForm({ ...editProjectForm, title: e.target.value })}
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <Label htmlFor={`edit-description-${project.id}`}>Description</Label>
+                              <Textarea
+                                id={`edit-description-${project.id}`}
+                                value={editProjectForm.description}
+                                onChange={(e) => setEditProjectForm({ ...editProjectForm, description: e.target.value })}
+                              />
+                            </div>
+                            <div className="md:col-span-3">
+                              <Label htmlFor={`edit-tags-${project.id}`}>Tags (comma-separated)</Label>
+                              <Input
+                                id={`edit-tags-${project.id}`}
+                                value={editProjectForm.tags}
+                                onChange={(e) => setEditProjectForm({ ...editProjectForm, tags: e.target.value })}
+                                placeholder="parquet, medallion, mandala"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="font-medium">{project.title}</p>
+                            {project.description && (
+                              <p className="text-sm text-muted-foreground line-clamp-1">
+                                {project.description}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDeleteProject(project.id)}
-                        data-testid={`button-delete-project-${project.id}`}
-                      >
-                        Delete
-                      </Button>
+                      <div className="flex items-center gap-2 ml-4">
+                        {editingProjectId === project.id ? (
+                          <>
+                            <Button size="sm" variant="default" onClick={() => saveEditProject(project.id)}>Save</Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditProject}>Cancel</Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button size="sm" variant="outline" onClick={() => startEditProject(project)}>Edit</Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteProject(project.id)}
+                              data-testid={`button-delete-project-${project.id}`}
+                            >
+                              Delete
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   ))}
-                  
+
                   {projects.length === 0 && (
                     <p className="text-muted-foreground text-center py-4">
                       No projects yet.
