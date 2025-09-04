@@ -24,6 +24,35 @@
             }
           },
           {
+            "type": "StorySection",
+            "props": {
+              "title": "My Story",
+              "paragraphs": [
+                {
+                  "value": "For over three decades, I've dedicated my life to the ancient art of marquetry and the precise craft of hardwood flooring. What began as an apprenticeship under master craftsmen in traditional European workshops has evolved into a passion for creating floors that are both functional and artistic."
+                },
+                {
+                  "value": "Each project represents a unique collaboration between client vision and artisan expertise. I believe that a floor should tell a story—whether through the sacred geometry of a mandala, the classical elegance of parquet, or the focal drama of a hand-crafted medallion."
+                },
+                {
+                  "value": "My commitment extends beyond individual projects to preserving these time-honored techniques for future generations, mentoring young craftspeople and contributing to industry resources that advance the field."
+                }
+              ],
+              "experienceYears": "30+",
+              "ctaText": "Start Your Project",
+              "id": "StorySection-ff66b725-7f10-4d5b-bced-c81fcdc71df6"
+            }
+          },
+          {
+            "type": "ProjectsCarousel",
+            "props": {
+              "title": "Featured Projects",
+              "subtitle": "Recent masterpieces showcasing artistic excellence",
+              "featured": false,
+              "id": "ProjectsCarousel-1477d294-bcfc-4e0c-9dff-eb357ccbcf80"
+            }
+          },
+          {
             "type": "TypesSection",
             "props": {
               "title": "Types of Marquetry",
@@ -52,7 +81,12 @@
       }
     },
     "createdAt": "2025-01-01T00:00:00.000Z",
-    "updatedAt": "2025-08-28T19:10:09.406Z"
+    "updatedAt": "2025-09-04T19:38:21.557Z",
+    "showInNav": true,
+    "order": 0,
+    "seo": {
+      "description": ""
+    }
   },
   {
     "title": "New Page",
