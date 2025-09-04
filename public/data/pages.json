@@ -89,6 +89,51 @@
     }
   },
   {
+    "title": "My Story",
+    "slug": "story",
+    "data": {
+      "root": {
+        "props": {
+          "title": "New Page"
+        }
+      },
+      "content": [],
+      "zones": {
+        "root:main": [
+          {
+            "type": "StorySection",
+            "props": {
+              "title": "My Story",
+              "paragraphs": [
+                {
+                  "value": "For over three decades, I've dedicated my life to the ancient art of marquetry and the precise craft of hardwood flooring. What began as an apprenticeship under master craftsmen in traditional European workshops has evolved into a passion for creating floors that are both functional and artistic."
+                },
+                {
+                  "value": "Each project represents a unique collaboration between client vision and artisan expertise. I believe that a floor should tell a story—whether through the sacred geometry of a mandala, the classical elegance of parquet, or the focal drama of a hand-crafted medallion."
+                },
+                {
+                  "value": "My commitment extends beyond individual projects to preserving these time-honored techniques for future generations, mentoring young craftspeople and contributing to industry resources that advance the field."
+                }
+              ],
+              "experienceYears": "30+",
+              "ctaText": "Start Your Project",
+              "id": "StorySection-0fe90284-a6ca-4bc0-9842-3f95e202d6dc"
+            }
+          }
+        ]
+      }
+    },
+    "published": true,
+    "showInNav": true,
+    "order": 1,
+    "seo": {
+      "description": ""
+    },
+    "id": "9dff1578-aab2-4739-a8fe-085669b82fab",
+    "createdAt": "2025-09-04T19:54:49.469Z",
+    "updatedAt": "2025-09-04T20:07:23.508Z"
+  },
+  {
     "title": "New",
     "slug": "new-page",
     "data": {
@@ -131,50 +176,5 @@
     "seo": {
       "description": ""
     }
-  },
-  {
-    "title": "My Story",
-    "slug": "story",
-    "data": {
-      "root": {
-        "props": {
-          "title": "New Page"
-        }
-      },
-      "content": [],
-      "zones": {
-        "root:main": [
-          {
-            "type": "StorySection",
-            "props": {
-              "title": "My Story",
-              "paragraphs": [
-                {
-                  "value": "For over three decades, I've dedicated my life to the ancient art of marquetry and the precise craft of hardwood flooring. What began as an apprenticeship under master craftsmen in traditional European workshops has evolved into a passion for creating floors that are both functional and artistic."
-                },
-                {
-                  "value": "Each project represents a unique collaboration between client vision and artisan expertise. I believe that a floor should tell a story—whether through the sacred geometry of a mandala, the classical elegance of parquet, or the focal drama of a hand-crafted medallion."
-                },
-                {
-                  "value": "My commitment extends beyond individual projects to preserving these time-honored techniques for future generations, mentoring young craftspeople and contributing to industry resources that advance the field."
-                }
-              ],
-              "experienceYears": "30+",
-              "ctaText": "Start Your Project",
-              "id": "StorySection-0fe90284-a6ca-4bc0-9842-3f95e202d6dc"
-            }
-          }
-        ]
-      }
-    },
-    "published": true,
-    "showInNav": true,
-    "order": 0,
-    "seo": {
-      "description": ""
-    },
-    "id": "9dff1578-aab2-4739-a8fe-085669b82fab",
-    "createdAt": "2025-09-04T19:54:49.469Z",
-    "updatedAt": "2025-09-04T19:54:49.469Z"
   }
 ]

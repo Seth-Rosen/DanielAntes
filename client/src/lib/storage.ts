@@ -139,7 +139,14 @@ export class StaticFileStorage implements IStaticStorage {
   
   async getPageBySlug(slug: string): Promise<Page | null> {
     const pages = await this.getPages();
-    return pages.find(p => p.slug === slug) || null;
+    const normalize = (s: string) => {
+      if (!s) return s;
+      return s === '/' ? '/' : s.replace(/^\/+/, '');
+    };
+    const target = normalize(slug);
+    return (
+      pages.find(p => normalize(p.slug) === target) || null
+    );
   }
   
   async getProjects(): Promise<Project[]> {
