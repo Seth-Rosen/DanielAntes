@@ -30,13 +30,22 @@ export default function DynamicPage() {
           setError(null);
         }
         // Debug: log requested slug and available pages
-        const all = await storage.getPages();
+        let all = await storage.getPages();
         console.debug('[DynamicPage] requested slug:', slug, 'available:', all.map(p => p.slug));
+        const norm = (s: string) => (s === '/' ? '/' : (s || '').replace(/^\/+|\/+$/g, '').toLowerCase());
         // Try to find page by slug
-        const foundPage = all.find(p => {
-          const norm = (s: string) => (s === '/' ? '/' : (s || '').replace(/^\/+|\/+$/g, '').toLowerCase());
-          return norm(p.slug) === norm(slug);
-        }) || null;
+        let foundPage = all.find(p => norm(p.slug) === norm(slug)) || null;
+        // Fallback: bypass any caching and read raw JSON
+        if (!foundPage) {
+          try {
+            const r = await fetch(`/data/pages.json?t=${Date.now()}`);
+            if (r.ok) {
+              all = await r.json();
+              console.debug('[DynamicPage:fallback] available:', all.map((p: any) => p.slug));
+              foundPage = (all as any[]).find((p: any) => norm(p.slug) === norm(slug)) || null;
+            }
+          } catch {}
+        }
         if (mounted) {
           if (foundPage && (foundPage.published ?? true)) {
             setPage(foundPage);
