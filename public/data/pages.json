@@ -14,16 +14,6 @@
       "zones": {
         "root:main": [
           {
-            "type": "HeroSection",
-            "props": {
-              "title": "Master Artisan\nMarquetry & Flooring",
-              "subtitle": "something",
-              "ctaPrimary": "View Portfolio",
-              "ctaSecondary": "Get In Touch",
-              "id": "HeroSection-c7767af9-531d-4a23-97dc-029a662f2af2"
-            }
-          },
-          {
             "type": "StorySection",
             "props": {
               "title": "My Story",
@@ -81,7 +71,7 @@
       }
     },
     "createdAt": "2025-01-01T00:00:00.000Z",
-    "updatedAt": "2025-09-04T20:19:02.694Z",
+    "updatedAt": "2025-09-04T23:42:39.181Z",
     "showInNav": true,
     "order": 0,
     "seo": {
@@ -89,8 +79,8 @@
     }
   },
   {
-    "title": "My Story",
-    "slug": "story",
+    "title": "my-story",
+    "slug": "my-story",
     "data": {
       "root": {
         "props": {
@@ -131,7 +121,7 @@
     },
     "id": "9dff1578-aab2-4739-a8fe-085669b82fab",
     "createdAt": "2025-09-04T19:54:49.469Z",
-    "updatedAt": "2025-09-04T20:48:58.192Z"
+    "updatedAt": "2025-09-04T23:38:35.392Z"
   },
   {
     "title": "New Page",
