@@ -135,7 +135,7 @@
   },
   {
     "title": "New Page",
-    "slug": "/new-page11",
+    "slug": "new-page11",
     "data": {
       "root": {
         "props": {
