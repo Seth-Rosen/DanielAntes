@@ -50,8 +50,15 @@ export default function DynamicPage() {
           if (foundPage && (foundPage.published ?? true)) {
             setPage(foundPage);
           } else {
-            setPage(null);
-            setError("Page not found");
+            const home = all.find(p => norm(p.slug) === '/');
+            if (home) {
+              console.debug('[DynamicPage] falling back to homepage');
+              setPage(home);
+              setError(null);
+            } else {
+              setPage(null);
+              setError("Page not found");
+            }
           }
         }
       } catch (err) {
