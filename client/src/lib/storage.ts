@@ -17,14 +17,16 @@ export interface IStaticStorage {
   
   // Write operations for admin
   savePage(page: Omit<Page, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Page>;
+  reorderPages(pagesInOrder: Page[]): Promise<Page[]>;
   deletePage(id: string): Promise<void>;
-  
+
   saveProject(project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Project>;
+  reorderProjects(projectsInOrder: Project[]): Promise<Project[]>;
   deleteProject(id: string): Promise<void>;
-  
+
   saveImage(image: Omit<Image, 'id' | 'uploadedAt'> & { id?: string }): Promise<Image>;
   deleteImage(id: string): Promise<void>;
-  
+
   saveSettings(settings: SiteSettings): Promise<void>;
 }
 
