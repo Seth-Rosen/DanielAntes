@@ -206,12 +206,12 @@ export class StaticFileStorage implements IStaticStorage {
     const pages = await this.getPages();
     const now = new Date().toISOString();
 
-    // Normalize slug: homepage is '/', others trimmed of leading/trailing slashes
+    // Normalize slug: homepage is '/', others trimmed of leading/trailing slashes and lowercased
     let normalizedSlug = (pageData.slug ?? '').trim();
     if (normalizedSlug === '' || normalizedSlug === '/' || normalizedSlug === '#') {
       normalizedSlug = '/';
     } else {
-      normalizedSlug = normalizedSlug.replace(/^\/+|\/+$/g, '');
+      normalizedSlug = normalizedSlug.replace(/^\/+|\/+$/g, '').toLowerCase();
     }
 
     const baseData = { ...pageData, slug: normalizedSlug } as typeof pageData;
