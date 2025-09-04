@@ -22,28 +22,40 @@ export default function DynamicPage() {
   const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
+    let mounted = true;
     async function loadPage() {
       try {
-        setIsLoading(true);
-        setError(null);
-        
+        if (mounted) {
+          setIsLoading(true);
+          setError(null);
+        }
         // Try to find page by slug
         const foundPage = await storage.getPageBySlug(slug);
-        
-        if (foundPage && foundPage.published) {
-          setPage(foundPage);
-        } else {
-          setError("Page not found");
+        if (mounted) {
+          if (foundPage && foundPage.published) {
+            setPage(foundPage);
+          } else {
+            setPage(null);
+            setError("Page not found");
+          }
         }
       } catch (err) {
         console.error('Failed to load page:', err);
-        setError('Failed to load page');
+        if (mounted) setError('Failed to load page');
       } finally {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     }
-    
+
     loadPage();
+
+    const onUpdate = (e: any) => {
+      if (e?.detail?.filename === 'pages.json') {
+        loadPage();
+      }
+    };
+    if (typeof window !== 'undefined') window.addEventListener('storage:update', onUpdate);
+    return () => { mounted = false; if (typeof window !== 'undefined') window.removeEventListener('storage:update', onUpdate); };
   }, [slug]);
   
   // Loading state
