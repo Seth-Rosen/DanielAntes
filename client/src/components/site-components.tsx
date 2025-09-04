@@ -179,7 +179,9 @@ export const ProjectsCarousel = ({ title, subtitle, featured }: {
     loadProjects();
   }, []);
 
-  const displayProjects = featured ? projects.filter((project: any) => project.featured) : projects;
+  const displayProjects = (featured ? projects.filter((project: any) => project.featured) : projects)
+    .slice()
+    .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
 
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background" data-testid="featured-projects-section">
@@ -266,12 +268,13 @@ export const PortfolioSection = ({ title, subtitle, showFilters, availableTags }
   }, []);
 
   // Filter projects based on selected tag
-  const filteredProjects = projects.filter((project: any) => {
-    if (selectedTag === "all") return true;
-    
-    const projectImages = allImages.filter((img: any) => img.projectId === project.id);
-    return projectImages.some((img: any) => img.tags.includes(selectedTag));
-  });
+  const filteredProjects = projects
+    .filter((project: any) => {
+      if (selectedTag === "all") return true;
+      const projectImages = allImages.filter((img: any) => img.projectId === project.id);
+      return projectImages.some((img: any) => img.tags.includes(selectedTag));
+    })
+    .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
 
   const getProjectImages = (projectId: string) => {
     let projectImages = allImages.filter((img: any) => img.projectId === projectId);
