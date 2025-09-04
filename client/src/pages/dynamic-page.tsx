@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "wouter";
+import { useLocation } from "wouter";
 import { Navigation } from "@/components/layout/navigation";
 import { Footer } from "@/components/layout/footer";
 import { PuckRenderer } from "@/components/puck-renderer";
@@ -7,15 +7,14 @@ import { storage } from "@/lib/storage";
 import { Page } from "@shared/schema";
 
 export default function DynamicPage() {
-  const params = useParams();
-  const raw = params.rest || "";
+  const [location] = useLocation();
   const normalize = (s: string) => {
     if (!s) return s;
     const decoded = decodeURIComponent(s);
     if (decoded === "/") return "/";
-    return decoded.replace(/^\/+/, "").replace(/\/+$/, "");
+    return decoded.replace(/^\/+|\/+$/g, "");
   };
-  const slug = normalize(raw);
+  const slug = normalize(location);
 
   const [page, setPage] = useState<Page | null>(null);
   const [isLoading, setIsLoading] = useState(true);
