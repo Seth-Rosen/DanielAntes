@@ -28,6 +28,9 @@ export default function DynamicPage() {
           setIsLoading(true);
           setError(null);
         }
+        // Save current scroll to avoid jump-to-top on async render
+        ScrollGuard.save();
+
         // Primary: resolve via storage helper (case-insensitive, trims slashes, title fallback)
         let found = await storage.getPageBySlug(slug);
 
@@ -52,6 +55,8 @@ export default function DynamicPage() {
             setPage(null);
             setError('Page not found');
           }
+          // Restore scroll after state update has flushed
+          setTimeout(() => ScrollGuard.restoreIfChanged(), 0);
         }
       } catch (err) {
         console.error('Failed to load page:', err);
