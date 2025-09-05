@@ -119,7 +119,9 @@ export class StaticFileStorage implements IStaticStorage {
   }
   
   private async fetchData<T>(filename: string): Promise<T> {
-    // Always fetch fresh for now during development
+    if (this.cache.has(filename)) {
+      return this.cache.get(filename) as T;
+    }
     const data = await this.backend.read<T>(filename);
     this.cache.set(filename, data);
     return data;
