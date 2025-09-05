@@ -47,8 +47,15 @@ export function Navigation() {
 
   const handleNavClick = (href: string) => {
     if (href.startsWith("#")) {
+      // Only perform programmatic scroll if user hasn't started scrolling
       const element = document.querySelector(href);
-      if (element) {
+      if (element && (window as any).requestIdleCallback) {
+        (window as any).requestIdleCallback(() => {
+          if (!(window as any).__userHasScrolled) {
+            element.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        });
+      } else if (element && !(window as any).__userHasScrolled) {
         element.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
