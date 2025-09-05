@@ -17,7 +17,12 @@ export function Navigation() {
         const navPages = allPages
           .filter(p => p.published && p.showInNav && p.slug !== "/")
           .sort((a, b) => (a.order || 0) - (b.order || 0));
-        if (mounted) setPages(navPages);
+        if (mounted) {
+          setPages(prev => {
+            const same = prev.length === navPages.length && prev.every((p, i) => p.id === navPages[i].id && p.slug === navPages[i].slug && p.title === navPages[i].title);
+            return same ? prev : navPages;
+          });
+        }
       } catch (error) {
         console.error('Failed to load navigation pages:', error);
       } finally {
