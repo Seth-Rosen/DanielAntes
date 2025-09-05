@@ -24,6 +24,14 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    // Warm cache to avoid duplicate fetching on first paint (nav + page)
+    storage.getPages().catch(() => {});
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
