@@ -10,7 +10,6 @@ import Admin from "@/pages/admin";
 import Builder from "@/pages/builder";
 import DynamicPage from "@/pages/dynamic-page";
 import { storage } from "@/lib/storage";
-import { ScrollGuard } from "@/lib/scrollGuard";
 
 function Router() {
   return (
@@ -26,13 +25,6 @@ function Router() {
 
 function App() {
   useEffect(() => {
-    ScrollGuard.init();
-    if (typeof window !== 'undefined') {
-      const mark = () => ((window as any).__userHasScrolled = true);
-      window.addEventListener('scroll', mark, { passive: true });
-      window.addEventListener('wheel', mark, { passive: true });
-      window.addEventListener('touchmove', mark, { passive: true });
-    }
     // Warm cache to avoid duplicate fetching on first paint (nav + page)
     storage.getPages().catch(() => {});
   }, []);
