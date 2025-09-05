@@ -26,6 +26,7 @@ function Router() {
 
 function App() {
   useEffect(() => {
+    ScrollGuard.init();
     // Warm cache to avoid duplicate fetching on first paint (nav + page)
     storage.getPages().catch(() => {});
   }, []);
