@@ -10,6 +10,7 @@ import Admin from "@/pages/admin";
 import Builder from "@/pages/builder";
 import DynamicPage from "@/pages/dynamic-page";
 import { storage } from "@/lib/storage";
+import { ScrollGuard } from "@/lib/scrollGuard";
 
 function Router() {
   return (
