@@ -41,6 +41,12 @@ function App() {
     storage.getPages().catch(() => {});
   }, []);
 
+  useLayoutEffect(() => {
+    if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (__handledInitialHash) return;
