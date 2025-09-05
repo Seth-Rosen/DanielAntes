@@ -23,10 +23,49 @@ function Router() {
   );
 }
 
+let __handledInitialHash = false;
+
 function App() {
   useEffect(() => {
     // Warm cache to avoid duplicate fetching on first paint (nav + page)
     storage.getPages().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (__handledInitialHash) return;
+    __handledInitialHash = true;
+
+    const { hash, pathname, search } = window.location;
+    if (!hash) return;
+
+    let userScrolled = false;
+    const onUserScroll = () => {
+      userScrolled = true;
+      window.removeEventListener('scroll', onUserScroll);
+    };
+    window.addEventListener('scroll', onUserScroll, { passive: true });
+
+    const start = performance.now();
+    const tryScroll = () => {
+      if (userScrolled) return; // don't override user intent
+      const el = document.querySelector(hash);
+      if (el) {
+        (el as HTMLElement).scrollIntoView({ behavior: 'auto', block: 'start' });
+        window.history.replaceState({}, '', pathname + search);
+        window.removeEventListener('scroll', onUserScroll);
+        return;
+      }
+      if (performance.now() - start < 3000) {
+        requestAnimationFrame(tryScroll);
+      } else {
+        // Element never appeared within timeout; clear hash to prevent late jumps
+        window.history.replaceState({}, '', pathname + search);
+        window.removeEventListener('scroll', onUserScroll);
+      }
+    };
+
+    tryScroll();
   }, []);
 
   return (
