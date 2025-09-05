@@ -4,6 +4,7 @@ import { Navigation } from "@/components/layout/navigation";
 import { Footer } from "@/components/layout/footer";
 import { PuckRenderer } from "@/components/puck-renderer";
 import { storage } from "@/lib/storage";
+import { ScrollGuard } from "@/lib/scrollGuard";
 import { Page } from "@shared/schema";
 
 export default function DynamicPage() {
