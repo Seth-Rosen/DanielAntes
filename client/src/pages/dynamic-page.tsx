@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import { useLocation } from "wouter";
 import { Navigation } from "@/components/layout/navigation";
 import { Footer } from "@/components/layout/footer";
