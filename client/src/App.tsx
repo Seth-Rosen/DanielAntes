@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route } from "wouter";
 import { useEffect, useLayoutEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -23,17 +23,6 @@ function Router() {
   );
 }
 
-function ScrollToTopOnRouteChange() {
-  const [location] = useLocation();
-  useLayoutEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (window.location.hash) return; // allow hash logic to handle
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-  }, [location]);
-  return null;
-}
-
-let __handledInitialHash = false;
 
 function App() {
   useEffect(() => {
@@ -47,30 +36,12 @@ function App() {
     }
   }, []);
 
-  useLayoutEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (__handledInitialHash) return;
-    __handledInitialHash = true;
-
-    const { hash, pathname, search } = window.location;
-    if (!hash) return;
-
-    // Clear the hash immediately to prevent any delayed native jumps
-    window.history.replaceState({}, '', pathname + search);
-
-    // One-shot attempt to scroll to target if it already exists; no retries
-    const el = document.querySelector(hash) as HTMLElement | null;
-    if (el) {
-      el.scrollIntoView({ behavior: 'auto', block: 'start' });
-    }
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="dark">
           <Toaster />
-          <ScrollToTopOnRouteChange />
           <Router />
         </div>
       </TooltipProvider>
