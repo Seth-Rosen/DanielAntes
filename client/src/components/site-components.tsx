@@ -74,7 +74,7 @@ export const HeroSection = ({ title, subtitle, backgroundImage, ctaPrimary, ctaS
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 font-semibold hover-lift"
-            onClick={() => { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); setLocation("/portfolio"); }}
+            onClick={() => { (window as any).__enableScrollGuard?.(); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); setLocation("/portfolio"); }}
             data-testid="button-view-portfolio"
           >
             {ctaPrimary}
