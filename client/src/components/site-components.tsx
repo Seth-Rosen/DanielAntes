@@ -72,9 +72,9 @@ export const HeroSection = ({ title, subtitle, backgroundImage, ctaPrimary, ctaS
           {subtitle}
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button 
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 font-semibold hover-lift" 
-            onClick={() => setLocation("/portfolio")}
+          <Button
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 font-semibold hover-lift"
+            onClick={() => { (window as any).__pendingScrollToTop = true; (window as any).__routeChangeAt = performance.now(); (window as any).__userScrolledSinceRouteChange = false; setLocation("/portfolio"); }}
             data-testid="button-view-portfolio"
           >
             {ctaPrimary}
@@ -213,10 +213,10 @@ export const ProjectsCarousel = ({ title, subtitle, featured }: {
         ) : displayProjects.length > 0 ? (
           <div className="flex space-x-6 overflow-x-auto carousel-container pb-4" data-testid="featured-projects-carousel">
             {displayProjects.slice(0, 4).map((project: any) => (
-              <Card 
-                key={project.id} 
-                className="flex-none w-80 bg-card hover-lift cursor-pointer border-none" 
-                onClick={() => setLocation(`/portfolio?project=${project.id}`)}
+              <Card
+                key={project.id}
+                className="flex-none w-80 bg-card hover-lift cursor-pointer border-none"
+                onClick={() => { (window as any).__pendingScrollToTop = true; (window as any).__routeChangeAt = performance.now(); (window as any).__userScrolledSinceRouteChange = false; setLocation(`/portfolio?project=${project.id}`); }}
                 data-testid={`project-card-${project.id}`}
               >
                 <div className="p-6">
