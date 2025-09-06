@@ -13,6 +13,7 @@ export function PuckRenderer({ data }: PuckRendererProps) {
       // eslint-disable-next-line no-console
       console.warn('[ScrollDebug] PuckRenderer mounted', { t: performance.now(), data });
     }
+    (window as any).__enableScrollGuard?.();
   }, [data]);
 
   // Guard against late programmatic scroll jumps for a short time after mount
