@@ -69,7 +69,7 @@ export function Navigation() {
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
               {/* Home is always first */}
-              <Link href="/">
+              <Link href="/" onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' })}>
                 <span
                   className={`transition-colors duration-200 ${
                     location === "/"
@@ -98,7 +98,7 @@ export function Navigation() {
                         {page.title}
                       </button>
                     ) : (
-                      <Link href={pageHref}>
+                      <Link href={pageHref} onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' })}>
                         <span
                           className={`transition-colors duration-200 ${
                             location === pageHref
@@ -115,7 +115,7 @@ export function Navigation() {
                 );
               })}
               
-              <Link href="/admin">
+              <Link href="/admin" onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' })}>
                 <Button variant="outline" size="sm" data-testid="admin-link">
                   Admin
                 </Button>
