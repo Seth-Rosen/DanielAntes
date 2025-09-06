@@ -47,7 +47,7 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
     if (__handledInitialHash) return;
     __handledInitialHash = true;
@@ -55,33 +55,14 @@ function App() {
     const { hash, pathname, search } = window.location;
     if (!hash) return;
 
-    let userScrolled = false;
-    const onUserScroll = () => {
-      userScrolled = true;
-      window.removeEventListener('scroll', onUserScroll);
-    };
-    window.addEventListener('scroll', onUserScroll, { passive: true });
+    // Clear the hash immediately to prevent any delayed native jumps
+    window.history.replaceState({}, '', pathname + search);
 
-    const start = performance.now();
-    const tryScroll = () => {
-      if (userScrolled) return; // don't override user intent
-      const el = document.querySelector(hash);
-      if (el) {
-        (el as HTMLElement).scrollIntoView({ behavior: 'auto', block: 'start' });
-        window.history.replaceState({}, '', pathname + search);
-        window.removeEventListener('scroll', onUserScroll);
-        return;
-      }
-      if (performance.now() - start < 3000) {
-        requestAnimationFrame(tryScroll);
-      } else {
-        // Element never appeared within timeout; clear hash to prevent late jumps
-        window.history.replaceState({}, '', pathname + search);
-        window.removeEventListener('scroll', onUserScroll);
-      }
-    };
-
-    tryScroll();
+    // One-shot attempt to scroll to target if it already exists; no retries
+    const el = document.querySelector(hash) as HTMLElement | null;
+    if (el) {
+      el.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
   }, []);
 
   return (
