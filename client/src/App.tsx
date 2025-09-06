@@ -78,6 +78,41 @@ function App() {
     };
   }, []);
 
+  // Global guard: prevent unexpected programmatic jump-to-top shortly after route/content changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const w: any = window as any;
+    w.__enableScrollGuard = () => {
+      w.__scrollGuardActiveUntil = Date.now() + 2000;
+      w.__scrollGuardUser = false;
+    };
+
+    const markUser = () => { const ww: any = window as any; ww.__scrollGuardUser = true; };
+    window.addEventListener('wheel', markUser, { passive: true });
+    window.addEventListener('touchmove', markUser, { passive: true });
+    window.addEventListener('keydown', markUser as any, { passive: true } as any);
+
+    let lastY = window.scrollY;
+    const restoreIfBad = () => {
+      const guardActive = (w.__scrollGuardActiveUntil || 0) > Date.now();
+      if (!guardActive) { lastY = window.scrollY; return; }
+      // If a non-user jump moved us to top, restore previous position
+      if (!w.__scrollGuardUser && window.scrollY === 0 && lastY > 120) {
+        requestAnimationFrame(() => window.scrollTo({ top: lastY, left: 0, behavior: 'auto' }));
+      } else {
+        lastY = window.scrollY;
+      }
+    };
+    window.addEventListener('scroll', restoreIfBad, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', restoreIfBad as any);
+      window.removeEventListener('wheel', markUser as any);
+      window.removeEventListener('touchmove', markUser as any);
+      window.removeEventListener('keydown', markUser as any);
+    };
+  }, []);
+
   useLayoutEffect(() => {
     if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
