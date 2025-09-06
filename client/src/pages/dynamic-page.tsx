@@ -72,20 +72,6 @@ export default function DynamicPage() {
     return () => { mounted = false; if (typeof window !== 'undefined') window.removeEventListener('storage:update', onUpdate); };
   }, [slug]);
 
-  useLayoutEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!isLoading) {
-      const w: any = window as any;
-      if (w.__pendingScrollToTop) {
-        if (!w.__userScrolledSinceRouteChange) {
-          window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-        }
-        w.__pendingScrollToTop = false;
-        w.__routeChangeAt = 0;
-        w.__userScrolledSinceRouteChange = false;
-      }
-    }
-  }, [isLoading]);
 
   // Loading state
   if (isLoading) {
