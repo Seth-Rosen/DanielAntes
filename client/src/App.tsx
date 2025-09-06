@@ -84,17 +84,6 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const onScroll = () => {
-      const w: any = window as any;
-      if (w.__pendingScrollToTop && w.__routeChangeAt) {
-        w.__userScrolledSinceRouteChange = true;
-      }
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
