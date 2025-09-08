@@ -14,6 +14,8 @@ type SiteData = {
 export default function Home() {
   const [data, setData] = useState<SiteData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const heroImages = (data?.gallery || []).map((g) => g.src);
 
   useEffect(() => {
     async function load() {
@@ -34,13 +36,39 @@ export default function Home() {
     load();
   }, []);
 
+  useEffect(() => {
+    if (heroImages.length < 1) return;
+    setCurrentSlide(0);
+    const id = setInterval(() => {
+      setCurrentSlide((s) => (s + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [heroImages.length]);
+
   return (
     <div className="min-h-screen bg-background text-foreground" data-testid="home-page">
       <Navigation />
       <main className="pt-16">
         {/* Hero */}
         <section id="home" className="relative h-[70vh] flex items-center justify-center overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-secondary to-muted" />
+          <div className="absolute inset-0">
+            {heroImages.length ? (
+              <div className="absolute inset-0">
+                {heroImages.map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt=""
+                    aria-hidden={currentSlide !== i}
+                    className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+                    style={{ opacity: currentSlide === i ? 1 : 0 }}
+                  />)
+                )}
+              </div>
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-secondary to-muted" />
+            )}
+          </div>
           <div className="absolute inset-0 bg-black/40" />
           <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
             <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 text-white" data-testid="hero-title">
@@ -56,6 +84,18 @@ export default function Home() {
               <a href="#contact"><Button variant="outline" className="px-8 py-3 font-semibold">Get In Touch</Button></a>
             </div>
           </div>
+          {heroImages.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+              {heroImages.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentSlide(i)}
+                  aria-label={`Go to slide ${i + 1}`}
+                  className={`h-2 w-2 rounded-full ${currentSlide === i ? 'bg-white' : 'bg-white/40'}`}
+                />
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Story */}
