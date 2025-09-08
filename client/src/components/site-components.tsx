@@ -37,13 +37,14 @@ export const HeroSection = ({ title, subtitle, backgroundImage, ctaPrimary, ctaS
   const handleScrollToSection = (sectionId: string) => {
     const element = document.querySelector(sectionId);
     if (element) {
+      (window as any).__allowNextProgrammaticScroll?.();
       element.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
   return (
-    <section 
-      id="home" 
+    <section
+      id="home"
       className="relative h-screen flex items-center justify-center overflow-hidden"
       data-testid="hero-section"
     >
