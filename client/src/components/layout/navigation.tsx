@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button";
-
 export function Navigation() {
   const handleNavClick = (href: string) => {
     if (href.startsWith("#")) {
