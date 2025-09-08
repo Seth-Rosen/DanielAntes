@@ -35,7 +35,7 @@ export function Footer() {
             <h4 className="font-semibold mb-4" data-testid="company-heading">Company</h4>
             <ul className="space-y-2 text-muted-foreground">
               <li><a href="#story" className="hover:text-primary transition-colors" data-testid="footer-story">My Story</a></li>
-              <li><a href="/portfolio" className="hover:text-primary transition-colors" data-testid="footer-portfolio">Portfolio</a></li>
+              <li><a href="#gallery" className="hover:text-primary transition-colors" data-testid="footer-portfolio">Portfolio</a></li>
               <li><a href="#press" className="hover:text-primary transition-colors" data-testid="footer-press">Press</a></li>
               <li><a href="#awards" className="hover:text-primary transition-colors" data-testid="footer-awards">Awards</a></li>
             </ul>
