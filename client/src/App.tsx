@@ -29,36 +29,35 @@ function ScrollLockUntilJump() {
     if (typeof window === 'undefined') return;
 
     let unlocked = false;
-    let lastY = window.scrollY;
+
+    // Force to top immediately on navigation
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 
     const prevHtmlOverflow = document.documentElement.style.overflow;
     const prevBodyOverflow = document.body.style.overflow;
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
 
+    // Block user input while locked to avoid visual fight
+    const prevent = (e: Event) => e.preventDefault();
+    window.addEventListener('wheel', prevent, { passive: false });
+    window.addEventListener('touchmove', prevent, { passive: false });
+    window.addEventListener('keydown', prevent as any, { passive: false } as any);
+
     const unlock = () => {
       if (unlocked) return;
       unlocked = true;
       document.documentElement.style.overflow = prevHtmlOverflow;
       document.body.style.overflow = prevBodyOverflow;
+      window.removeEventListener('wheel', prevent as any);
+      window.removeEventListener('touchmove', prevent as any);
+      window.removeEventListener('keydown', prevent as any);
     };
 
-    const onScroll = () => {
-      const y = window.scrollY;
-      if (!unlocked && y === 0 && lastY > 100) {
-        window.scrollTo({ top: lastY, left: 0, behavior: 'auto' });
-        unlock();
-      } else {
-        lastY = y;
-      }
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    const timer = setTimeout(unlock, 2000);
+    const timer = setTimeout(unlock, 1600);
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('scroll', onScroll as any);
       unlock();
     };
   }, [location]);
