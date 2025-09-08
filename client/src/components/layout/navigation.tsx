@@ -70,7 +70,7 @@ export function Navigation() {
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
               {/* Home is always first */}
-              <Link href="/" onClick={() => { (window as any).__enableScrollGuard?.(); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }}>
+              <Link href="/" onClick={() => { (window as any).__allowNextProgrammaticScroll?.(); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }}>
                 <span
                   className={`transition-colors duration-200 ${
                     location === "/"
@@ -99,7 +99,7 @@ export function Navigation() {
                         {page.title}
                       </button>
                     ) : (
-                      <Link href={pageHref} onClick={() => { (window as any).__enableScrollGuard?.(); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }}>
+                      <Link href={pageHref} onClick={() => { (window as any).__allowNextProgrammaticScroll?.(); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }}>
                         <span
                           className={`transition-colors duration-200 ${
                             location === pageHref
@@ -116,7 +116,7 @@ export function Navigation() {
                 );
               })}
               
-              <Link href="/admin" onClick={() => { (window as any).__enableScrollGuard?.(); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }}>
+              <Link href="/admin" onClick={() => { (window as any).__allowNextProgrammaticScroll?.(); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }}>
                 <Button variant="outline" size="sm" data-testid="admin-link">
                   Admin
                 </Button>
