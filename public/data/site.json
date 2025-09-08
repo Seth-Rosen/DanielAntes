@@ -1,0 +1,18 @@
+{
+  "heroTitle": "Master Artisan\nMarquetry & Flooring",
+  "heroSubtitle": "Crafting bespoke hardwood floors and intricate marquetry with three decades of artistic excellence",
+  "story": [
+    "For over three decades, I've dedicated my life to the ancient art of marquetry and the precise craft of hardwood flooring.",
+    "Each project represents a unique collaboration between client vision and artisan expertise.",
+    "My commitment extends beyond individual projects to preserving these time-honored techniques for future generations."
+  ],
+  "gallery": [
+    { "src": "/uploads/example-1.jpg", "alt": "Project example 1" },
+    { "src": "/uploads/example-2.jpg", "alt": "Project example 2" },
+    { "src": "/uploads/example-3.jpg", "alt": "Project example 3" }
+  ],
+  "contact": {
+    "email": "daniel@example.com",
+    "phone": "+1 (555) 123-4567"
+  }
+}
