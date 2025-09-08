@@ -9,7 +9,7 @@
   ],
   "heroImages": [
     { "src": "https://cdn.builder.io/api/v1/image/assets%2F7a49fb9e5a3e44f68aecac27eea3cb74%2F71cce0638e0740d3a5dd5e8f146402d7?format=webp&width=800", "alt": "Hero image - lodge floor compass medallion" },
-    { "src": "https://web.archive.org/web/20200609164114/http://nebula.wsimg.com/dd04b5b9d470cbdb6a0574215d4e918f?AccessKeyId=71439853A81389AAD565&disposition=0&alloworigin=1", "alt": "Hero image 1" },
+    { "src": "/uploads/example-1.jpg", "alt": "Hero image 1" },
     { "src": "/uploads/example-2.jpg", "alt": "Hero image 2" },
     { "src": "/uploads/example-3.jpg", "alt": "Hero image 3" }
   ],
