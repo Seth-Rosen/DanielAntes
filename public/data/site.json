@@ -7,6 +7,11 @@
     "My commitment extends beyond individual projects to preserving these time-honored techniques for future generations.",
     "The artisans responsibility is to preserve and reveal that beauty, the third dimension appearance and iredescense only seen in the finest of furniture."
   ],
+  "heroImages": [
+    { "src": "/uploads/example-1.jpg", "alt": "Hero image 1" },
+    { "src": "/uploads/example-2.jpg", "alt": "Hero image 2" },
+    { "src": "/uploads/example-3.jpg", "alt": "Hero image 3" }
+  ],
   "gallery": [
     { "src": "/uploads/example-1.jpg", "alt": "Project example 1" },
     { "src": "/uploads/example-2.jpg", "alt": "Project example 2" },
