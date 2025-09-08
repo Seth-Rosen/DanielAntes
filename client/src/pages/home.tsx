@@ -15,6 +15,7 @@ export default function Home() {
   const [data, setData] = useState<SiteData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showLogo, setShowLogo] = useState(true);
   const heroSources = (data?.heroImages && data.heroImages.length ? data.heroImages : data?.gallery) || [];
   const heroImages = heroSources.map((g) => g.src);
 
@@ -46,11 +47,26 @@ export default function Home() {
     return () => clearInterval(id);
   }, [heroImages.length]);
 
+  useEffect(() => {
+    const update = () => {
+      const hero = document.getElementById('home');
+      const h = hero?.offsetHeight || 0;
+      setShowLogo(window.scrollY < Math.max(0, h - 10));
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true } as AddEventListenerOptions);
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update as any);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground" data-testid="home-page">
       <a
         href="#home"
-        className="fixed top-4 left-4 z-[100] pointer-events-auto"
+        className={`fixed top-4 left-4 z-[100] transition-opacity duration-300 ${showLogo ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         onClick={(e) => {
           e.preventDefault();
           const el = document.querySelector('#home');
