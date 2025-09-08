@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Navigation } from "@/components/layout/navigation";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 
@@ -8,6 +7,7 @@ type SiteData = {
   heroSubtitle: string;
   story: string[];
   gallery: { src: string; alt?: string }[];
+  heroImages?: { src: string; alt?: string }[];
   contact?: { email?: string; phone?: string };
 };
 
@@ -15,7 +15,8 @@ export default function Home() {
   const [data, setData] = useState<SiteData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const heroImages = (data?.gallery || []).map((g) => g.src);
+  const heroSources = (data?.heroImages && data.heroImages.length ? data.heroImages : data?.gallery) || [];
+  const heroImages = heroSources.map((g) => g.src);
 
   useEffect(() => {
     async function load() {
@@ -47,8 +48,22 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground" data-testid="home-page">
-      <Navigation />
-      <main className="pt-16">
+      <a
+        href="#home"
+        className="fixed top-4 left-4 z-50"
+        onClick={(e) => {
+          e.preventDefault();
+          const el = document.querySelector('#home');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }}
+      >
+        <img
+          src="https://cdn.builder.io/api/v1/image/assets%2F7a49fb9e5a3e44f68aecac27eea3cb74%2Face3d3af6f704e60afd7ecc1e12eb2af?format=webp&width=800"
+          alt="Daniel Antes logo"
+          className="h-28 md:h-32 lg:h-40 w-auto object-contain"
+        />
+      </a>
+      <main className="pt-0">
         {/* Hero */}
         <section id="home" className="relative h-[70vh] flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0">
