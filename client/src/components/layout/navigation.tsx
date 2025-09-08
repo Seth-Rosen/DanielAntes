@@ -49,6 +49,7 @@ export function Navigation() {
     if (href.startsWith("#")) {
       const element = document.querySelector(href);
       if (element) {
+        (window as any).__allowNextProgrammaticScroll?.();
         element.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
