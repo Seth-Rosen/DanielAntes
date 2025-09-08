@@ -8,15 +8,15 @@
     "The artisans responsibility is to preserve and reveal that beauty, the third dimension appearance and iredescense only seen in the finest of furniture."
   ],
   "heroImages": [
-    { "src": "/uploads/DanHero1.webp", "alt": "Hero image - lodge floor compass medallion" },
-    { "src": "/uploads/example-1.jpg", "alt": "Hero image 1" },
-    { "src": "/uploads/example-2.jpg", "alt": "Hero image 2" },
-    { "src": "/uploads/example-3.jpg", "alt": "Hero image 3" }
+    { "src": "/uploads/DanHero1.jpeg", "alt": "Hero image - lodge floor compass medallion" },
+    { "src": "/uploads/danhero2.jpeg", "alt": "Hero image 1" },
+    { "src": "/uploads/danhero3.jpeg", "alt": "Hero image 2" },
+    { "src": "/uploads/danhero4.jpeg", "alt": "Hero image 3" }
   ],
   "gallery": [
-    { "src": "/uploads/example-1.jpg", "alt": "Project example 1" },
-    { "src": "/uploads/example-2.jpg", "alt": "Project example 2" },
-    { "src": "/uploads/example-3.jpg", "alt": "Project example 3" }
+    { "src": "/uploads/dangallery1.jpeg", "alt": "Project example 1" },
+    { "src": "/uploads/dangallery2.jpeg", "alt": "Project example 2" },
+    { "src": "/uploads/dangallery3.jpeg", "alt": "Project example 3" }
   ],
   "contact": {
     "email": "dan.antes1@gmail.com",
