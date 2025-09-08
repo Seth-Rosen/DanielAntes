@@ -75,7 +75,7 @@ export const HeroSection = ({ title, subtitle, backgroundImage, ctaPrimary, ctaS
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 font-semibold hover-lift"
-            onClick={() => { (window as any).__enableScrollGuard?.(); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); setLocation("/portfolio"); }}
+            onClick={() => { (window as any).__allowNextProgrammaticScroll?.(); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); setLocation("/portfolio"); }}
             data-testid="button-view-portfolio"
           >
             {ctaPrimary}
@@ -217,7 +217,7 @@ export const ProjectsCarousel = ({ title, subtitle, featured }: {
               <Card
                 key={project.id}
                 className="flex-none w-80 bg-card hover-lift cursor-pointer border-none"
-                onClick={() => { (window as any).__enableScrollGuard?.(); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); setLocation(`/portfolio?project=${project.id}`); }}
+                onClick={() => { (window as any).__allowNextProgrammaticScroll?.(); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); setLocation(`/portfolio?project=${project.id}`); }}
                 data-testid={`project-card-${project.id}`}
               >
                 <div className="p-6">
