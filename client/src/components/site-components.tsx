@@ -473,6 +473,7 @@ export const StorySection = ({ title, paragraphs, experienceYears, ctaText }: {
   const handleScrollToSection = (sectionId: string) => {
     const element = document.querySelector(sectionId);
     if (element) {
+      (window as any).__allowNextProgrammaticScroll?.();
       element.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
