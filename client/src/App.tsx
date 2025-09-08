@@ -21,6 +21,13 @@ function App() {
       <TooltipProvider>
         <div className="dark">
           <Toaster />
+          <div
+            className="fixed bottom-4 right-4 z-[200] rounded bg-black/70 text-white px-3 py-2 text-xs md:text-sm shadow pointer-events-none"
+            aria-live="polite"
+            data-testid="site-disclaimer"
+          >
+            Currently under construction
+          </div>
           <Router />
         </div>
       </TooltipProvider>
