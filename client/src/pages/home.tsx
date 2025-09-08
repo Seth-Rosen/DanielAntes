@@ -50,17 +50,18 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground" data-testid="home-page">
       <a
         href="#home"
-        className="fixed top-4 left-4 z-50"
+        className="fixed top-4 left-4 z-[100] pointer-events-auto"
         onClick={(e) => {
           e.preventDefault();
           const el = document.querySelector('#home');
           if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }}
+        aria-label="Go to top"
       >
         <img
           src="https://cdn.builder.io/api/v1/image/assets%2F7a49fb9e5a3e44f68aecac27eea3cb74%2Face3d3af6f704e60afd7ecc1e12eb2af?format=webp&width=800"
           alt="Daniel Antes logo"
-          className="h-28 md:h-32 lg:h-40 w-auto object-contain"
+          className="h-28 md:h-32 lg:h-40 w-auto object-contain select-none drop-shadow-lg"
         />
       </a>
       <main className="pt-0">
@@ -128,7 +129,8 @@ export default function Home() {
         {/* Gallery */}
         <section id="gallery" className="py-20 px-4 sm:px-6 lg:px-8 bg-muted" data-testid="gallery-section">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-10">Gallery</h2>
+            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-2">Gallery</h2>
+            <p className="text-sm text-muted-foreground mb-8">Full gallery coming soon.</p>
             {loading ? (
               <div className="text-muted-foreground">Loading...</div>
             ) : (data?.gallery?.length ? (
