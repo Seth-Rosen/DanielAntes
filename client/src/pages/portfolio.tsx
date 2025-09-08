@@ -163,7 +163,7 @@ export default function Portfolio() {
                             <Card
                               key={image.id}
                               className="overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow"
-                              onClick={() => { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); setLocation(`/gallery?image=${image.id}`); }}
+                              onClick={() => { (window as any).__allowNextProgrammaticScroll?.(); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); setLocation(`/gallery?image=${image.id}`); }}
                               data-testid={`card-image-${image.id}`}
                             >
                               <div className="aspect-[4/3] overflow-hidden">
