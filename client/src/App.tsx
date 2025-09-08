@@ -54,10 +54,19 @@ function ScrollLockUntilJump() {
       window.removeEventListener('keydown', prevent as any);
     };
 
-    const timer = setTimeout(unlock, 1600);
+    let lastY = window.scrollY;
+    const detectSecondJump = () => {
+      const y = window.scrollY;
+      if (y === 0 && lastY > 100) {
+        unlock();
+      } else {
+        lastY = y;
+      }
+    };
+    window.addEventListener('scroll', detectSecondJump, { passive: true });
 
     return () => {
-      clearTimeout(timer);
+      window.removeEventListener('scroll', detectSecondJump as any);
       unlock();
     };
   }, [location]);
