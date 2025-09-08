@@ -1,71 +1,105 @@
-import { useState, useEffect, useLayoutEffect } from "react";
+import { useEffect, useState } from "react";
 import { Navigation } from "@/components/layout/navigation";
 import { Footer } from "@/components/layout/footer";
-import { PuckRenderer } from "@/components/puck-renderer";
-import { storage } from "@/lib/storage";
-import { Page } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+
+type SiteData = {
+  heroTitle: string;
+  heroSubtitle: string;
+  story: string[];
+  gallery: { src: string; alt?: string }[];
+  contact?: { email?: string; phone?: string };
+};
 
 export default function Home() {
-  // Fetch homepage content from static storage
-  const [page, setPage] = useState<Page | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
+  const [data, setData] = useState<SiteData | null>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    async function loadPage() {
+    async function load() {
       try {
-        setIsLoading(true);
-        const homePage = await storage.getPageBySlug("/");
-        setPage(homePage);
-      } catch (err) {
-        console.error('Failed to load homepage:', err);
-        setError('Failed to load page');
+        const res = await fetch("/data/site.json?t=" + Date.now());
+        if (res.ok) {
+          const json = (await res.json()) as SiteData;
+          setData(json);
+        } else {
+          setData(null);
+        }
+      } catch {
+        setData(null);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     }
-    loadPage();
+    load();
   }, []);
 
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Navigation />
-        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <div className="text-muted-foreground">Loading homepage...</div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state - fallback to basic content
-  if (error || !page) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Navigation />
-        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <div className="text-center max-w-2xl mx-auto px-4">
-            <h1 className="text-4xl font-serif font-bold mb-4">Welcome to Daniel Antes</h1>
-            <p className="text-muted-foreground mb-6">
-              Master artisan specializing in marquetry and hardwood flooring with three decades of expertise.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {error ? "Unable to load page content. Please try again later." : "Homepage content not found."}
-            </p>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  // Render page content using Puck CMS data
   return (
     <div className="min-h-screen bg-background text-foreground" data-testid="home-page">
       <Navigation />
-      <PuckRenderer data={page.data} />
+      <main className="pt-16">
+        {/* Hero */}
+        <section id="home" className="relative h-[70vh] flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-secondary to-muted" />
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
+            <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 text-white" data-testid="hero-title">
+              {(data?.heroTitle || "Daniel Antes").split("\n").map((l, i) => (
+                <span key={i} className="block">{l}</span>
+              ))}
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-200 mb-8 max-w-2xl mx-auto" data-testid="hero-description">
+              {data?.heroSubtitle || "Bespoke hardwood and marquetry"}
+            </p>
+            <div className="flex gap-4 justify-center">
+              <a href="#gallery"><Button className="px-8 py-3 font-semibold">View Gallery</Button></a>
+              <a href="#contact"><Button variant="outline" className="px-8 py-3 font-semibold">Get In Touch</Button></a>
+            </div>
+          </div>
+        </section>
+
+        {/* Story */}
+        <section id="story" className="py-20 px-4 sm:px-6 lg:px-8 bg-background" data-testid="story-section">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6" data-testid="story-title">My Story</h2>
+            {(data?.story || [
+              "Add your story paragraphs in public/data/site.json.",
+            ]).map((p, i) => (
+              <p key={i} className="text-lg text-muted-foreground mb-6" data-testid={`story-paragraph-${i+1}`}>{p}</p>
+            ))}
+          </div>
+        </section>
+
+        {/* Gallery */}
+        <section id="gallery" className="py-20 px-4 sm:px-6 lg:px-8 bg-muted" data-testid="gallery-section">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-10">Gallery</h2>
+            {loading ? (
+              <div className="text-muted-foreground">Loading...</div>
+            ) : (data?.gallery?.length ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {data.gallery.map((img, i) => (
+                  <div key={i} className="overflow-hidden rounded-lg bg-card">
+                    <img src={img.src} alt={img.alt || `image-${i}`} className="w-full h-64 object-cover" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-muted-foreground">Add images to public/uploads and list them in public/data/site.json.</div>
+            ))}
+          </div>
+        </section>
+
+        {/* Contact */}
+        <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 bg-background" data-testid="contact-section">
+          <div className="max-w-xl mx-auto text-center">
+            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">Start Your Project</h2>
+            <p className="text-muted-foreground mb-6">Reach out to discuss your vision.</p>
+            {data?.contact?.email && <p className="mb-2">Email: <a href={`mailto:${data.contact.email}`} className="underline">{data.contact.email}</a></p>}
+            {data?.contact?.phone && <p>Phone: {data.contact.phone}</p>}
+          </div>
+        </section>
+      </main>
       <Footer />
     </div>
   );
